@@ -11,8 +11,8 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "New Series Food Corner — Home" },
       { name: "description", content: "Warm, home-style Veg, Non-Veg, Biryani and Chinese. Order fresh from New Series Food Corner." },
-      { property: "og:title", content: "New Series Food Corner" },
-      { property: "og:description", content: "Warm, home-style Veg, Non-Veg, Biryani and Chinese." },
+      { property: "og:title", content: "New Series Food Corner — Home" },
+      { property: "og:description", content: "Warm, home-style Veg, Non-Veg, Biryani and Chinese. Order fresh from New Series Food Corner." },
     ],
   }),
   component: HomePage,
