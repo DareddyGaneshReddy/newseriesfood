@@ -39,6 +39,18 @@ function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [placing, setPlacing] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [upiSettings, setUpiSettings] = useState<{ vpa: string | null; payeeName: string | null }>({ vpa: null, payeeName: null });
+
+  useEffect(() => {
+    supabase
+      .from("payment_settings")
+      .select("upi_vpa, payee_name")
+      .eq("singleton", true)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setUpiSettings({ vpa: data.upi_vpa, payeeName: data.payee_name });
+      });
+  }, []);
 
   const detectLocation = () => {
     if (!("geolocation" in navigator)) {
