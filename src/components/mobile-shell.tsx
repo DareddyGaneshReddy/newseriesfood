@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, UtensilsCrossed, ShoppingBag, Receipt, User, MapPin, Loader2 } from "lucide-react";
+import { Home, UtensilsCrossed, ShoppingBag, Receipt, User, MapPin, Loader2, ShieldCheck } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useCart } from "@/lib/cart-store";
+import { useSession, useIsAdmin } from "@/lib/auth-hook";
 import { cn } from "@/lib/utils";
 
 export function MobileShell({
