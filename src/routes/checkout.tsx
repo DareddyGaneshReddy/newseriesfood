@@ -122,10 +122,14 @@ function CheckoutPage() {
     );
   }
 
-  const place = async () => {
+  const place = async (upiAppScheme?: (params: string) => string) => {
     if (!user) return;
     if (orderType === "delivery" && !addr.trim()) {
       toast.error("Please enter a delivery address");
+      return;
+    }
+    if (pay === "upi" && (!upiSettings.vpa || !isValidVpa(upiSettings.vpa))) {
+      toast.error("UPI is not configured yet. Please choose another method or contact the restaurant.");
       return;
     }
     setPlacing(true);
@@ -165,6 +169,21 @@ function CheckoutPage() {
     }
     clear();
     toast.success(`Order ${order.code} placed`);
+
+    if (pay === "upi" && upiAppScheme && upiSettings.vpa) {
+      const params = buildUpiParams({
+        vpa: upiSettings.vpa,
+        payeeName: upiSettings.payeeName || "New Series Food Corner",
+        amount: total,
+        note: `Order ${order.code}`,
+        txnRef: order.code,
+      });
+      // Launch UPI intent — Android/iOS will open the target app.
+      window.location.href = upiAppScheme(params);
+      setTimeout(() => nav({ to: "/order/$id", params: { id: order.id } }), 800);
+      return;
+    }
+
     nav({ to: "/order/$id", params: { id: order.id } });
   };
 
