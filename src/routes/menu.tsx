@@ -46,10 +46,11 @@ function MenuPage() {
   // Which categories to show as secondary chips, based on mode.
   const visibleCats: Category[] = useMemo(() => {
     const list = cats.data ?? [];
-    if (mode === "veg") return list.filter((c) => !NONVEG_ONLY_CATS.has(c.slug) && !MIXED_CATS.has(c.slug) && c.slug !== "beverages");
-    if (mode === "nonveg") return list.filter((c) => c.slug !== "beverages" && c.slug !== "chefs-special" && !isVegOnlyCat(c.slug));
+    if (mode === "veg") return list.filter((c) => !NONVEG_ONLY_CATS.has(c.slug) && !MIXED_CATS.has(c.slug) && c.slug !== BEVERAGES);
+    if (mode === "nonveg") return list.filter((c) => c.slug !== BEVERAGES && c.slug !== CHEF && !isVegOnlyCat(c.slug));
     return list;
   }, [cats.data, mode]);
+
 
   // Whenever mode changes, clear cat if it's no longer visible.
   const activeSlug = useMemo(() => {
