@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { ArrowLeft, Bike, Store, UtensilsCrossed, Banknote, Smartphone, CreditCard, Wallet, LocateFixed, Loader2 } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
@@ -9,6 +9,7 @@ import { useSession } from "@/lib/auth-hook";
 import { inr } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { UPI_APPS, buildUpiParams, isValidVpa } from "@/lib/upi";
 
 const searchSchema = z.object({
   discount: z.number().default(0),
