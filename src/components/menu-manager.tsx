@@ -348,23 +348,23 @@ function EditorSheet({
           </div>
 
           <Field label="Name">
-            <input value={d.name} onChange={(e) => set("name", e.target.value)} className="input" />
+            <input value={d.name} onChange={(e) => set("name", e.target.value)} className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary" />
           </Field>
           <Field label="Description">
-            <textarea rows={2} value={d.description} onChange={(e) => set("description", e.target.value)} className="input resize-none" />
+            <textarea rows={2} value={d.description} onChange={(e) => set("description", e.target.value)} className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary resize-none" />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Price (₹)">
-              <input inputMode="decimal" value={d.price} onChange={(e) => set("price", e.target.value)} className="input" />
+              <input inputMode="decimal" value={d.price} onChange={(e) => set("price", e.target.value)} className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary" />
             </Field>
             <Field label="Prep time (min)">
-              <input inputMode="numeric" value={d.prep_time_min} onChange={(e) => set("prep_time_min", e.target.value)} className="input" />
+              <input inputMode="numeric" value={d.prep_time_min} onChange={(e) => set("prep_time_min", e.target.value)} className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary" />
             </Field>
           </div>
 
           <Field label="Category">
-            <select value={d.category_id} onChange={(e) => set("category_id", e.target.value)} className="input">
+            <select value={d.category_id} onChange={(e) => set("category_id", e.target.value)} className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary">
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
               ))}
@@ -373,7 +373,7 @@ function EditorSheet({
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Spice level">
-              <select value={d.spice_level} onChange={(e) => set("spice_level", e.target.value)} className="input">
+              <select value={d.spice_level} onChange={(e) => set("spice_level", e.target.value)} className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary">
                 <option value="none">None</option>
                 <option value="mild">Mild</option>
                 <option value="medium">Medium</option>
@@ -381,7 +381,7 @@ function EditorSheet({
               </select>
             </Field>
             <Field label="Sort order">
-              <input inputMode="numeric" value={d.sort_order} onChange={(e) => set("sort_order", e.target.value)} className="input" />
+              <input inputMode="numeric" value={d.sort_order} onChange={(e) => set("sort_order", e.target.value)} className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary" />
             </Field>
           </div>
 
