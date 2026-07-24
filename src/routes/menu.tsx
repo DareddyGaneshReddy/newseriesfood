@@ -28,9 +28,11 @@ export const Route = createFileRoute("/menu")({
 
 type FilterMode = "all" | "veg" | "nonveg";
 
-// Category slugs that only make sense under the "All" filter.
 const NONVEG_ONLY_CATS = new Set(["non-veg", "chinese-non-veg"]);
-const MIXED_CATS = new Set(["biryani", "chefs-special"]); // contain both veg and non-veg
+const MIXED_CATS = new Set(["biryani", "chef-specials"]); // contain both veg and non-veg
+const BEVERAGES = "beverages";
+const CHEF = "chef-specials";
+
 
 function MenuPage() {
   const search = Route.useSearch();
