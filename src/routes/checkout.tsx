@@ -110,13 +110,14 @@ function CheckoutPage() {
   };
 
   return (
-    <MobileShell showTopBar={false}>
+    <MobileShell showTopBar={false} showBottomNav={false}>
       <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-border/60 bg-background/85 px-5 py-3 backdrop-blur">
         <button onClick={() => history.back()} className="press flex h-9 w-9 items-center justify-center rounded-full bg-secondary" aria-label="Back">
           <ArrowLeft className="h-4 w-4" />
         </button>
         <h1 className="text-base font-semibold">Checkout</h1>
       </div>
+
 
       <Section title="How would you like it?">
         <div className="grid grid-cols-3 gap-2">
