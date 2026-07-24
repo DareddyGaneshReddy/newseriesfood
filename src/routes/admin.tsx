@@ -146,6 +146,7 @@ function AdminPage() {
       )}
 
       {tab === "menu" && <MenuManager />}
+      {tab === "payments" && <PaymentsManager />}
     </div>
   );
 }
