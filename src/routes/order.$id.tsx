@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Check, Clock, Phone, MessageCircle } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
+import { DeliveryMap } from "@/components/delivery-map";
 import { supabase } from "@/integrations/supabase/client";
 import { inr } from "@/lib/format";
 import { cn } from "@/lib/utils";
