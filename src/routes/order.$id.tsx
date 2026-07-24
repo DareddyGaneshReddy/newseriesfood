@@ -75,7 +75,18 @@ function OrderTrackPage() {
             <Clock className="h-8 w-8 text-primary" />
           </div>
 
+          {order.order_type === "delivery" && (
+            <div className="mx-5 mt-4 animate-fade-up">
+              <DeliveryMap
+                status={order.status}
+                address={order.address_line ?? null}
+                etaMinutes={order.eta_minutes ?? null}
+              />
+            </div>
+          )}
+
           <div className="mx-5 mt-4 rounded-2xl border border-border/60 bg-card p-5 shadow-soft">
+
             <h3 className="text-sm font-semibold">Progress</h3>
             <ol className="mt-4 space-y-3">
               {STAGES.map((s, i) => {
