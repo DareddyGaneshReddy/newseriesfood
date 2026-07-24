@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 
 export type CartItem = {
   id: string;
@@ -42,7 +43,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<CartCtx>(() => ({
     items,
-    add: (item, qty = 1) =>
+    add: (item, qty = 1) => {
       setItems((cur) => {
         const idx = cur.findIndex((c) => c.id === item.id);
         if (idx >= 0) {
@@ -51,7 +52,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return next;
         }
         return [...cur, { ...item, qty }];
-      }),
+      });
+      toast.success(`${item.name} added to cart`, {
+        description: "Tap the cart tab to review your order.",
+        duration: 2200,
+      });
+    },
     setQty: (id, qty) =>
       setItems((cur) => (qty <= 0 ? cur.filter((c) => c.id !== id) : cur.map((c) => (c.id === id ? { ...c, qty } : c)))),
     remove: (id) => setItems((cur) => cur.filter((c) => c.id !== id)),

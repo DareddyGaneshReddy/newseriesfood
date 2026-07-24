@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, UtensilsCrossed, ShoppingBag, Receipt, User, MapPin } from "lucide-react";
-import type { ReactNode } from "react";
+import { Home, UtensilsCrossed, ShoppingBag, Receipt, User, MapPin, Loader2 } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useCart } from "@/lib/cart-store";
 import { cn } from "@/lib/utils";
 
@@ -29,16 +29,81 @@ export function MobileShell({
   );
 }
 
+const LOC_KEY = "nsfc.location.v1";
+
+function useCurrentLocation() {
+  const [label, setLabel] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(LOC_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached) as { label: string; ts: number };
+        if (Date.now() - parsed.ts < 1000 * 60 * 30) {
+          setLabel(parsed.label);
+          setLoading(false);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+
+    if (!("geolocation" in navigator)) {
+      setLabel("Set location");
+      setLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=14`,
+            { headers: { "Accept-Language": "en" } },
+          );
+          const j = await res.json();
+          const a = j.address ?? {};
+          const short =
+            a.suburb || a.neighbourhood || a.village || a.town || a.city_district ||
+            a.city || a.county || a.state_district || a.state || j.display_name?.split(",")[0] ||
+            "Current location";
+          setLabel(short);
+          try { localStorage.setItem(LOC_KEY, JSON.stringify({ label: short, ts: Date.now() })); } catch { /* ignore */ }
+        } catch {
+          setLabel("Current location");
+        } finally {
+          setLoading(false);
+        }
+      },
+      () => {
+        setLabel("Set location");
+        setLoading(false);
+      },
+      { enableHighAccuracy: false, timeout: 6000, maximumAge: 60_000 },
+    );
+  }, []);
+
+  return { label, loading };
+}
+
 function TopBar({ title }: { title?: string }) {
+  const { label, loading } = useCurrentLocation();
+  const display = label ?? (loading ? "Locating…" : "Your Location");
+  // `title` is legacy — used only as sr-only page title, no longer shown as location.
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border/60 bg-background/85 px-5 py-3 backdrop-blur">
       <div className="flex items-center gap-2">
         <MapPin className="h-4 w-4 text-primary" />
         <div className="leading-tight">
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Deliver to</div>
-          <div className="text-sm font-medium">{title ?? "Your Location"}</div>
+          <div className="flex items-center gap-1 text-sm font-medium">
+            <span className="truncate max-w-[190px]">{display}</span>
+            {loading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+          </div>
         </div>
       </div>
+      {title && <span className="sr-only">{title}</span>}
       <Link
         to="/profile"
         className="press flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground/80"

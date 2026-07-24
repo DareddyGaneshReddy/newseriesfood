@@ -8,7 +8,7 @@ import { imageFor } from "@/lib/menu-images";
 import { inr } from "@/lib/format";
 import { useCart } from "@/lib/cart-store";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/item/$id")({
   component: ItemPage,
@@ -66,7 +66,7 @@ function ItemPage() {
       },
       qty,
     );
-    toast.success("Added to cart");
+    
     router.history.back();
   };
 

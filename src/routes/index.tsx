@@ -77,10 +77,11 @@ function HomePage() {
             <div className="text-muted-foreground">Rating</div>
           </div>
           <div className="flex-1 py-1">
-            <div className="font-semibold text-foreground">₹150</div>
-            <div className="text-muted-foreground">For two</div>
+            <div className="font-semibold text-foreground">Fresh</div>
+            <div className="text-muted-foreground">Home-style</div>
           </div>
         </div>
+
       </div>
 
       {/* Categories */}
