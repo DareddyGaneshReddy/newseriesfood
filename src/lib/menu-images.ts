@@ -3,12 +3,12 @@
 // "chicken biryani" wins over "chicken".
 const map: Record<string, string> = {
   // Chef combos (compound names first)
-  "chicken biryani + soft drink": "photo-1633945274309-2c16c9673e5b",
+  "chicken biryani + soft drink": "photo-1563379091339-03b21ab4a4f8",
   "veg meals + buttermilk": "photo-1567337710282-00832b415979",
   "chicken fried rice + chilli chicken": "photo-1626082927389-6cd097cdc6ec",
 
   // Biryani
-  "chicken biryani": "photo-1633945274309-2c16c9673e5b",
+  "chicken biryani": "photo-1563379091339-03b21ab4a4f8",
   "mutton biryani": "photo-1589302168068-964664d93dc0",
   "egg biryani": "photo-1631452180519-c014fe946bc7",
   "veg biryani": "photo-1596797038530-2c107229654b",
@@ -16,8 +16,8 @@ const map: Record<string, string> = {
   // Meals / rice
   "mini meals": "photo-1567337710282-00832b415979",
   "full veg meals": "photo-1567337710282-00832b415979",
-  "chicken meals": "photo-1633945274309-2c16c9673e5b",
-  "curd rice": "photo-1626100134240-f60d38f2c26e",
+  "chicken meals": "photo-1567337710282-00832b415979",
+  "curd rice": "photo-1567337710282-00832b415979",
   "lemon rice": "photo-1596797038530-2c107229654b",
   "tomato rice": "photo-1596797038530-2c107229654b",
   "jeera rice": "photo-1596797038530-2c107229654b",
@@ -75,7 +75,8 @@ const map: Record<string, string> = {
   "coffee": "photo-1509042239860-f550ce710b93",
 };
 
-const fallback = "photo-1567337710282-00832b415979";
+const FALLBACK_ID = "photo-1567337710282-00832b415979";
+export const FALLBACK_IMAGE = `https://images.unsplash.com/${FALLBACK_ID}?auto=format&fit=crop&w=900&q=80`;
 
 // Longer, more specific keys should match first.
 const sortedKeys = Object.keys(map).sort((a, b) => b.length - a.length);
@@ -88,6 +89,6 @@ export function imageFor(name: string): string {
       if (key.includes(k)) { hit = map[k]; break; }
     }
   }
-  const id = hit ?? fallback;
+  const id = hit ?? FALLBACK_ID;
   return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=80`;
 }

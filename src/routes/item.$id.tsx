@@ -73,7 +73,7 @@ function ItemPage() {
   return (
     <MobileShell showTopBar={false} showBottomNav={false}>
       <div className="relative">
-        <img src={data.image_url ?? imageFor(data.name)} alt={data.name} className="h-72 w-full object-cover" />
+        <img src={data.image_url ?? imageFor(data.name)} alt={data.name} onError={(e) => { const el = e.currentTarget; if (!el.dataset.fb) { el.dataset.fb = "1"; el.src = "https://images.unsplash.com/photo-1567337710282-00832b415979?auto=format&fit=crop&w=900&q=80"; } }} className="h-72 w-full object-cover" />
         <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/30 to-transparent p-4 pt-[max(env(safe-area-inset-top),1rem)]">
           <button
             onClick={() => router.history.back()}
