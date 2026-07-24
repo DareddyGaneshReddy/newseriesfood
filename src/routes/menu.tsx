@@ -176,5 +176,6 @@ function MenuPage() {
 
 // Fully veg-only categories — none of our items are non-veg here.
 function isVegOnlyCat(slug: string) {
-  return ["veg-meals", "indian-breads", "veg-curries", "chinese-veg"].includes(slug);
+  return ["veg-meals", "breads", "veg-curries", "chinese-veg"].includes(slug);
 }
+
