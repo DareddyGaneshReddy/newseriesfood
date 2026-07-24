@@ -8,6 +8,7 @@ import { fetchMenu, fetchCategories } from "@/lib/queries";
 import { inr } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { MenuManager } from "@/components/menu-manager";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — New Series Food Corner" }, { name: "robots", content: "noindex" }] }),
