@@ -22,7 +22,7 @@ export function MobileShell({
       <div className="mx-auto flex min-h-screen w-full max-w-[440px] flex-col bg-background shadow-lift">
         {showTopBar && <TopBar title={title} />}
         {hero}
-        <main className={cn("flex-1", showBottomNav ? "pb-28" : "pb-4")}>{children}</main>
+        <main className="flex-1 pb-28">{children}</main>
         {showBottomNav && <BottomNav />}
       </div>
     </div>
