@@ -197,6 +197,7 @@ export function MenuManager() {
 
       {editing && (
         <EditorSheet
+          key={editing.id ?? "new"}
           draft={editing}
           categories={cats.data ?? []}
           onClose={() => setEditing(null)}
