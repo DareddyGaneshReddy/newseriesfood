@@ -89,7 +89,7 @@ function AdminPage() {
       </header>
 
       <div className="flex gap-2 px-5 pt-4">
-        {(["overview", "orders", "menu"] as const).map((t) => (
+        {(["overview", "orders", "menu", "payments"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
