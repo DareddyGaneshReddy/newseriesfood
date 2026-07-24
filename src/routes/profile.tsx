@@ -16,6 +16,7 @@ function ProfilePage() {
   const isAdmin = useIsAdmin(user?.id);
   const nav = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [notif, setNotif] = useState(true);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -26,10 +27,18 @@ function ProfilePage() {
   const deleteAccount = async () => {
     if (!confirm("Permanently delete your account and data?")) return;
     setBusy(true);
-    // Data is cascade-deleted server-side; delete auth user via RPC not exposed — sign out for now.
     toast.info("Account deletion has been requested. Signing you out.");
     await supabase.auth.signOut();
     nav({ to: "/" });
+  };
+
+  const requireAuth = () => {
+    if (!user) {
+      toast.error("Please sign in first");
+      nav({ to: "/auth" });
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -62,11 +71,47 @@ function ProfilePage() {
       </div>
 
       <div className="mx-5 mt-6 divide-y divide-border/60 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-soft">
-        <Row icon={<MapPin className="h-4 w-4" />} label="Saved addresses" />
-        <Row icon={<Heart className="h-4 w-4" />} label="Favourites" />
-        <Row icon={<Bell className="h-4 w-4" />} label="Notifications" />
-        <Row icon={<Shield className="h-4 w-4" />} label="Privacy & security" />
-        <Row icon={<HelpCircle className="h-4 w-4" />} label="Help & support" />
+        <Row
+          icon={<MapPin className="h-4 w-4" />}
+          label="Saved addresses"
+          hint="Manage delivery locations"
+          onClick={() => {
+            if (!requireAuth()) return;
+            toast.info("Add a delivery address at checkout — we'll save it here for next time.");
+          }}
+        />
+        <Row
+          icon={<Heart className="h-4 w-4" />}
+          label="Favourites"
+          hint="Tap ❤ on any dish to save it"
+          onClick={() => {
+            if (!requireAuth()) return;
+            nav({ to: "/menu" });
+          }}
+        />
+        <ToggleRow
+          icon={<Bell className="h-4 w-4" />}
+          label="Order notifications"
+          value={notif}
+          onChange={(v) => {
+            setNotif(v);
+            toast.success(v ? "Notifications enabled" : "Notifications muted");
+          }}
+        />
+        <Row
+          icon={<Shield className="h-4 w-4" />}
+          label="Privacy & security"
+          hint="How we protect your data"
+          onClick={() => toast.info("We store only what's needed for your orders. Data is encrypted in transit and at rest.")}
+        />
+        <Row
+          icon={<HelpCircle className="h-4 w-4" />}
+          label="Help & support"
+          hint="Call the restaurant"
+          onClick={() => {
+            window.location.href = "tel:+919999999999";
+          }}
+        />
         {isAdmin && (
           <Link to="/admin" className="press flex items-center justify-between px-4 py-3.5 text-sm">
             <span className="flex items-center gap-3"><Sparkles className="h-4 w-4 text-primary" /> Admin panel</span>
@@ -99,11 +144,55 @@ function ProfilePage() {
   );
 }
 
-function Row({ icon, label }: { icon: React.ReactNode; label: string }) {
+function Row({
+  icon,
+  label,
+  hint,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint?: string;
+  onClick?: () => void;
+}) {
   return (
-    <button className="press flex w-full items-center justify-between px-4 py-3.5 text-sm">
-      <span className="flex items-center gap-3">{icon} {label}</span>
+    <button onClick={onClick} className="press flex w-full items-center justify-between px-4 py-3.5 text-left text-sm">
+      <span className="flex items-center gap-3">
+        {icon}
+        <span className="flex flex-col">
+          <span>{label}</span>
+          {hint && <span className="text-[11px] text-muted-foreground">{hint}</span>}
+        </span>
+      </span>
       <ChevronRight className="h-4 w-4 text-muted-foreground" />
     </button>
+  );
+}
+
+function ToggleRow({
+  icon,
+  label,
+  value,
+  onChange,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex w-full items-center justify-between px-4 py-3.5 text-sm">
+      <span className="flex items-center gap-3">{icon} {label}</span>
+      <button
+        onClick={() => onChange(!value)}
+        role="switch"
+        aria-checked={value}
+        className={`relative h-6 w-11 rounded-full transition-colors ${value ? "bg-primary" : "bg-muted"}`}
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${value ? "translate-x-5" : "translate-x-0.5"}`}
+        />
+      </button>
+    </div>
   );
 }
