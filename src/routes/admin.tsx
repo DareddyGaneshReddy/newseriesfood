@@ -8,6 +8,7 @@ import { fetchMenu, fetchCategories } from "@/lib/queries";
 import { inr } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { MenuManager } from "@/components/menu-manager";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — New Series Food Corner" }, { name: "robots", content: "noindex" }] }),
@@ -143,26 +144,7 @@ function AdminPage() {
         </div>
       )}
 
-      {tab === "menu" && (
-        <div className="flex flex-col gap-2 px-5 pt-4 pb-10">
-          {cats.data?.map((c) => (
-            <div key={c.id}>
-              <h3 className="mt-3 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{c.icon} {c.name}</h3>
-              <div className="mt-2 divide-y divide-border/60 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-soft">
-                {menu.data?.filter((m) => m.category_id === c.id).map((m) => (
-                  <div key={m.id} className="flex items-center justify-between px-4 py-3">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">{m.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{inr(m.price)}</div>
-                    </div>
-                    <MenuAvailabilityToggle id={m.id} onToggle={toggleAvailability} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {tab === "menu" && <MenuManager />}
     </div>
   );
 }
