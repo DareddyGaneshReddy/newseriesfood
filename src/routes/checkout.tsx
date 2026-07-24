@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
-import { ArrowLeft, Bike, Store, UtensilsCrossed, Banknote, Smartphone, CreditCard, Wallet } from "lucide-react";
+import { ArrowLeft, Bike, Store, UtensilsCrossed, Banknote, Smartphone, CreditCard, Wallet, LocateFixed, Loader2 } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
 import { useCart } from "@/lib/cart-store";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +37,52 @@ function CheckoutPage() {
   const [addr, setAddr] = useState("");
   const [notes, setNotes] = useState("");
   const [placing, setPlacing] = useState(false);
+  const [locating, setLocating] = useState(false);
+
+  const detectLocation = () => {
+    if (!("geolocation" in navigator)) {
+      toast.error("Location not supported on this device");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            { headers: { "Accept-Language": "en" } },
+          );
+          const j = await res.json();
+          const a = j.address ?? {};
+          const parts = [
+            [a.house_number, a.road].filter(Boolean).join(" "),
+            a.neighbourhood || a.suburb || a.village,
+            a.city || a.town || a.county,
+            a.state,
+            a.postcode,
+          ].filter(Boolean);
+          const line = parts.join(", ") || j.display_name || "";
+          if (line) {
+            setAddr(line);
+            toast.success("Location detected");
+          } else {
+            toast.error("Couldn't resolve address");
+          }
+        } catch {
+          toast.error("Couldn't fetch address");
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => {
+        setLocating(false);
+        toast.error("Location permission denied");
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
 
   const total = Math.max(0, subtotal + tax + (orderType === "delivery" ? delivery : 0) + packing - discount);
 
@@ -129,6 +175,15 @@ function CheckoutPage() {
 
       {orderType === "delivery" && (
         <Section title="Delivery address">
+          <button
+            type="button"
+            onClick={detectLocation}
+            disabled={locating}
+            className="press mb-2 flex w-full items-center justify-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2.5 text-xs font-semibold text-primary disabled:opacity-70"
+          >
+            {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
+            {locating ? "Detecting your location…" : "Use my current location"}
+          </button>
           <textarea
             rows={3}
             value={addr}
@@ -138,6 +193,7 @@ function CheckoutPage() {
           />
         </Section>
       )}
+
 
       <Section title="Payment">
         <div className="grid grid-cols-2 gap-2">
