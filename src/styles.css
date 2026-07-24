@@ -48,6 +48,13 @@
 
   --shadow-soft: 0 1px 2px rgba(43, 43, 43, 0.04), 0 8px 24px -12px rgba(43, 43, 43, 0.08);
   --shadow-lift: 0 2px 4px rgba(43, 43, 43, 0.04), 0 16px 40px -20px rgba(43, 43, 43, 0.12);
+  --shadow-glow: 0 12px 32px -14px color-mix(in oklab, var(--terracotta) 55%, transparent);
+  --shadow-inset-hair: inset 0 1px 0 0 rgba(255, 255, 255, 0.65);
+
+  --gradient-sunrise: linear-gradient(135deg, oklch(0.8 0.14 60) 0%, var(--terracotta) 55%, oklch(0.5 0.14 28) 100%);
+  --gradient-warm: linear-gradient(140deg, var(--mustard) 0%, var(--terracotta) 100%);
+  --gradient-herb: linear-gradient(140deg, oklch(0.74 0.09 130) 0%, var(--olive) 100%);
+  --gradient-cream: linear-gradient(180deg, oklch(0.995 0.006 78) 0%, var(--cream) 100%);
 }
 
 :root {
