@@ -128,7 +128,7 @@ function BottomNav() {
   const { count } = useCart();
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[440px] -translate-x-1/2 border-t border-border/60 bg-background/90 backdrop-blur">
+    <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[440px] -translate-x-1/2 border-t border-border/60 bg-background/90 backdrop-blur-xl">
       <ul className="flex items-stretch justify-around px-3 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
         {tabs.map(({ to, label, icon: Icon }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -137,16 +137,19 @@ function BottomNav() {
               <Link
                 to={to}
                 className={cn(
-                  "press relative flex flex-col items-center gap-1 rounded-xl px-4 py-1.5 text-[11px] font-medium transition-colors",
+                  "press relative flex flex-col items-center gap-1 rounded-2xl px-4 py-1.5 text-[11px] font-medium transition-colors",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
+                {active && (
+                  <span className="absolute inset-x-3 -top-2 h-1 rounded-full bg-gradient-warm" />
+                )}
                 <span className="relative">
                   <Icon className={cn("h-5 w-5", active && "stroke-[2.4]")} />
                   {to === "/cart" && count > 0 && (
                     <span
                       key={count}
-                      className="animate-bounce-in absolute -right-2.5 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground"
+                      className="animate-bounce-in absolute -right-2.5 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground shadow-glow"
                     >
                       {count}
                     </span>
