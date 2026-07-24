@@ -23,7 +23,7 @@ function AdminPage() {
   const isAdmin = useIsAdmin(user?.id);
   const nav = useNavigate();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"overview" | "orders" | "menu">("overview");
+  const [tab, setTab] = useState<"overview" | "orders" | "menu" | "payments">("overview");
 
   useEffect(() => {
     if (ready && !user) nav({ to: "/auth", search: { next: "/admin" } });
