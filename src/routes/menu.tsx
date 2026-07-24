@@ -69,9 +69,10 @@ function MenuPage() {
       // Under Veg/Non-Veg, hide beverages entirely; hide chef's specials under veg/nonveg.
       const slug = catBySlug.get(m.category_id);
       if (mode !== "all") {
-        if (slug === "beverages") return false;
-        if (slug === "chefs-special") return false;
+        if (slug === BEVERAGES) return false;
+        if (slug === CHEF) return false;
       }
+
       // Secondary category filter only applies under "all"
       if (mode === "all" && activeCat && m.category_id !== activeCat.id) return false;
       if (query) {
