@@ -285,16 +285,18 @@ function CheckoutPage() {
         />
       </Section>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[440px] border-t border-border/60 bg-background/95 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] backdrop-blur">
-        <button
-          onClick={place}
-          disabled={placing}
-          className="press flex w-full items-center justify-between rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-lift disabled:opacity-70"
-        >
-          <span>{inr(total)}</span>
-          <span>{placing ? "Placing…" : "Place order"}</span>
-        </button>
-      </div>
+      {pay !== "upi" && (
+        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[440px] border-t border-border/60 bg-background/95 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] backdrop-blur">
+          <button
+            onClick={() => place()}
+            disabled={placing}
+            className="press flex w-full items-center justify-between rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-lift disabled:opacity-70"
+          >
+            <span>{inr(total)}</span>
+            <span>{placing ? "Placing…" : "Place order"}</span>
+          </button>
+        </div>
+      )}
     </MobileShell>
   );
 }
