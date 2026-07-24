@@ -124,7 +124,8 @@ function CartPage() {
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-16 z-30 mx-auto w-full max-w-[440px] px-5">
+      <div className="h-32" />
+      <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 mx-auto w-full max-w-[440px] px-5">
         <Link
           to="/checkout"
           search={{ discount, tax, delivery, packing }}
