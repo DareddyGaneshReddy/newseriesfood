@@ -312,6 +312,33 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_settings: {
+        Row: {
+          created_at: string
+          id: string
+          payee_name: string | null
+          singleton: boolean
+          updated_at: string
+          upi_vpa: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payee_name?: string | null
+          singleton?: boolean
+          updated_at?: string
+          upi_vpa?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payee_name?: string | null
+          singleton?: boolean
+          updated_at?: string
+          upi_vpa?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { ArrowLeft, Bike, Store, UtensilsCrossed, Banknote, Smartphone, CreditCard, Wallet, LocateFixed, Loader2 } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
@@ -9,6 +9,7 @@ import { useSession } from "@/lib/auth-hook";
 import { inr } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { UPI_APPS, buildUpiParams, isValidVpa } from "@/lib/upi";
 
 const searchSchema = z.object({
   discount: z.number().default(0),
@@ -38,6 +39,18 @@ function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [placing, setPlacing] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [upiSettings, setUpiSettings] = useState<{ vpa: string | null; payeeName: string | null }>({ vpa: null, payeeName: null });
+
+  useEffect(() => {
+    supabase
+      .from("payment_settings")
+      .select("upi_vpa, payee_name")
+      .eq("singleton", true)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setUpiSettings({ vpa: data.upi_vpa, payeeName: data.payee_name });
+      });
+  }, []);
 
   const detectLocation = () => {
     if (!("geolocation" in navigator)) {
@@ -109,10 +122,14 @@ function CheckoutPage() {
     );
   }
 
-  const place = async () => {
+  const place = async (upiAppScheme?: (params: string) => string) => {
     if (!user) return;
     if (orderType === "delivery" && !addr.trim()) {
       toast.error("Please enter a delivery address");
+      return;
+    }
+    if (pay === "upi" && (!upiSettings.vpa || !isValidVpa(upiSettings.vpa))) {
+      toast.error("UPI is not configured yet. Please choose another method or contact the restaurant.");
       return;
     }
     setPlacing(true);
@@ -152,6 +169,21 @@ function CheckoutPage() {
     }
     clear();
     toast.success(`Order ${order.code} placed`);
+
+    if (pay === "upi" && upiAppScheme && upiSettings.vpa) {
+      const params = buildUpiParams({
+        vpa: upiSettings.vpa,
+        payeeName: upiSettings.payeeName || "New Series Food Corner",
+        amount: total,
+        note: `Order ${order.code}`,
+        txnRef: order.code,
+      });
+      // Launch UPI intent — Android/iOS will open the target app.
+      window.location.href = upiAppScheme(params);
+      setTimeout(() => nav({ to: "/order/$id", params: { id: order.id } }), 800);
+      return;
+    }
+
     nav({ to: "/order/$id", params: { id: order.id } });
   };
 
@@ -202,7 +234,45 @@ function CheckoutPage() {
           <PayCard active={pay === "card"} onClick={() => setPay("card")} icon={<CreditCard className="h-4 w-4" />} label="Card" />
           <PayCard active={pay === "wallet"} onClick={() => setPay("wallet")} icon={<Wallet className="h-4 w-4" />} label="Wallet" />
         </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">Online payments are shown for demonstration — orders are confirmed and tracked.</p>
+
+        {pay === "upi" && (
+          <div className="mt-3 rounded-2xl border border-border/60 bg-card p-3">
+            {upiSettings.vpa && isValidVpa(upiSettings.vpa) ? (
+              <>
+                <div className="text-[11px] text-muted-foreground">
+                  Pay <span className="font-semibold text-foreground">{inr(total)}</span> to{" "}
+                  <span className="font-semibold text-foreground">{upiSettings.vpa}</span> — pick your UPI app below.
+                  The amount will be pre-filled.
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {UPI_APPS.map((app) => (
+                    <button
+                      key={app.id}
+                      disabled={placing}
+                      onClick={() => place(app.scheme)}
+                      className="press flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-left text-sm font-medium shadow-soft disabled:opacity-60"
+                    >
+                      <span
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold text-white"
+                        style={{ backgroundColor: app.color }}
+                      >
+                        {app.name.slice(0, 1)}
+                      </span>
+                      <span className="flex-1 truncate">{app.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-[10px] text-muted-foreground">
+                  Tapping an app places your order and opens it with the amount ready to pay.
+                </p>
+              </>
+            ) : (
+              <div className="text-[11px] text-muted-foreground">
+                UPI isn't set up yet by the restaurant. Please choose another payment method.
+              </div>
+            )}
+          </div>
+        )}
       </Section>
 
       <Section title="Order notes (optional)">
@@ -215,16 +285,18 @@ function CheckoutPage() {
         />
       </Section>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[440px] border-t border-border/60 bg-background/95 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] backdrop-blur">
-        <button
-          onClick={place}
-          disabled={placing}
-          className="press flex w-full items-center justify-between rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-lift disabled:opacity-70"
-        >
-          <span>{inr(total)}</span>
-          <span>{placing ? "Placing…" : "Place order"}</span>
-        </button>
-      </div>
+      {pay !== "upi" && (
+        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[440px] border-t border-border/60 bg-background/95 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] backdrop-blur">
+          <button
+            onClick={() => place()}
+            disabled={placing}
+            className="press flex w-full items-center justify-between rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-lift disabled:opacity-70"
+          >
+            <span>{inr(total)}</span>
+            <span>{placing ? "Placing…" : "Place order"}</span>
+          </button>
+        </div>
+      )}
     </MobileShell>
   );
 }

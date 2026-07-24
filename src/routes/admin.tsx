@@ -9,6 +9,7 @@ import { inr } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { MenuManager } from "@/components/menu-manager";
+import { PaymentsManager } from "@/components/payments-manager";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — New Series Food Corner" }, { name: "robots", content: "noindex" }] }),
@@ -22,7 +23,7 @@ function AdminPage() {
   const isAdmin = useIsAdmin(user?.id);
   const nav = useNavigate();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"overview" | "orders" | "menu">("overview");
+  const [tab, setTab] = useState<"overview" | "orders" | "menu" | "payments">("overview");
 
   useEffect(() => {
     if (ready && !user) nav({ to: "/auth", search: { next: "/admin" } });
@@ -88,7 +89,7 @@ function AdminPage() {
       </header>
 
       <div className="flex gap-2 px-5 pt-4">
-        {(["overview", "orders", "menu"] as const).map((t) => (
+        {(["overview", "orders", "menu", "payments"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -145,6 +146,7 @@ function AdminPage() {
       )}
 
       {tab === "menu" && <MenuManager />}
+      {tab === "payments" && <PaymentsManager />}
     </div>
   );
 }
