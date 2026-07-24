@@ -66,7 +66,7 @@ function ItemPage() {
       },
       qty,
     );
-    toast.success("Added to cart");
+    
     router.history.back();
   };
 
