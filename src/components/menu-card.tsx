@@ -32,8 +32,16 @@ export function MenuCard({ item }: { item: MenuItemRow }) {
           src={item.image_url}
           alt={item.name}
           loading="lazy"
+          onError={(e) => {
+            const el = e.currentTarget;
+            if (!el.dataset.fallback) {
+              el.dataset.fallback = "1";
+              el.src = "https://images.unsplash.com/photo-1567337710282-00832b415979?auto=format&fit=crop&w=900&q=80";
+            }
+          }}
           className="h-full w-full object-cover"
         />
+
       </Link>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-start justify-between gap-2">
