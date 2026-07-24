@@ -234,7 +234,45 @@ function CheckoutPage() {
           <PayCard active={pay === "card"} onClick={() => setPay("card")} icon={<CreditCard className="h-4 w-4" />} label="Card" />
           <PayCard active={pay === "wallet"} onClick={() => setPay("wallet")} icon={<Wallet className="h-4 w-4" />} label="Wallet" />
         </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">Online payments are shown for demonstration — orders are confirmed and tracked.</p>
+
+        {pay === "upi" && (
+          <div className="mt-3 rounded-2xl border border-border/60 bg-card p-3">
+            {upiSettings.vpa && isValidVpa(upiSettings.vpa) ? (
+              <>
+                <div className="text-[11px] text-muted-foreground">
+                  Pay <span className="font-semibold text-foreground">{inr(total)}</span> to{" "}
+                  <span className="font-semibold text-foreground">{upiSettings.vpa}</span> — pick your UPI app below.
+                  The amount will be pre-filled.
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {UPI_APPS.map((app) => (
+                    <button
+                      key={app.id}
+                      disabled={placing}
+                      onClick={() => place(app.scheme)}
+                      className="press flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-left text-sm font-medium shadow-soft disabled:opacity-60"
+                    >
+                      <span
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold text-white"
+                        style={{ backgroundColor: app.color }}
+                      >
+                        {app.name.slice(0, 1)}
+                      </span>
+                      <span className="flex-1 truncate">{app.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-[10px] text-muted-foreground">
+                  Tapping an app places your order and opens it with the amount ready to pay.
+                </p>
+              </>
+            ) : (
+              <div className="text-[11px] text-muted-foreground">
+                UPI isn't set up yet by the restaurant. Please choose another payment method.
+              </div>
+            )}
+          </div>
+        )}
       </Section>
 
       <Section title="Order notes (optional)">
