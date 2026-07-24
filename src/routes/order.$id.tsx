@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Check, Clock, Phone, MessageCircle } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
+import { DeliveryMap } from "@/components/delivery-map";
 import { supabase } from "@/integrations/supabase/client";
 import { inr } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -74,7 +75,18 @@ function OrderTrackPage() {
             <Clock className="h-8 w-8 text-primary" />
           </div>
 
+          {order.order_type === "delivery" && (
+            <div className="mx-5 mt-4 animate-fade-up">
+              <DeliveryMap
+                status={order.status}
+                address={order.address_line ?? null}
+                etaMinutes={order.eta_minutes ?? null}
+              />
+            </div>
+          )}
+
           <div className="mx-5 mt-4 rounded-2xl border border-border/60 bg-card p-5 shadow-soft">
+
             <h3 className="text-sm font-semibold">Progress</h3>
             <ol className="mt-4 space-y-3">
               {STAGES.map((s, i) => {
