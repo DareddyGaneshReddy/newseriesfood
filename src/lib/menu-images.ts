@@ -1,94 +1,93 @@
-// Curated food photography — each dish name is mapped to a hand-picked
-// Unsplash photo that visually matches. Longer keys are checked first so
-// "chicken biryani" wins over "chicken".
+// Curated food photography — every dish name is mapped to a real,
+// verified Wikimedia Commons photo of that exact dish. Longer keys are
+// checked first so "chicken biryani" wins over "chicken".
+
+const WM = "https://upload.wikimedia.org/wikipedia/commons";
+
 const map: Record<string, string> = {
-  // Chef combos (compound names first)
-  "chicken biryani + soft drink": "photo-1563379091339-03b21ab4a4f8",
-  "veg meals + buttermilk": "photo-1567337710282-00832b415979",
-  "chicken fried rice + chilli chicken": "photo-1626082927389-6cd097cdc6ec",
+  // ---- Combos (match before their parts) ----
+  "chicken biryani + soft drink": `${WM}/thumb/7/7c/Hyderabadi_Chicken_Biryani.jpg/960px-Hyderabadi_Chicken_Biryani.jpg`,
+  "veg meals + buttermilk": `${WM}/thumb/4/4b/My_traditional_Indian_thali_meal_%2848625245542%29.jpg/960px-My_traditional_Indian_thali_meal_%2848625245542%29.jpg`,
+  "chicken fried rice + chilli chicken": `${WM}/thumb/7/71/Fried_rice_with_chicken_%2817234644521%29.jpg/960px-Fried_rice_with_chicken_%2817234644521%29.jpg`,
 
-  // Biryani
-  "chicken biryani": "photo-1563379091339-03b21ab4a4f8",
-  "mutton biryani": "photo-1589302168068-964664d93dc0",
-  "egg biryani": "photo-1631452180519-c014fe946bc7",
-  "veg biryani": "photo-1596797038530-2c107229654b",
+  // ---- Biryani ----
+  "chicken biryani": `${WM}/thumb/7/7c/Hyderabadi_Chicken_Biryani.jpg/960px-Hyderabadi_Chicken_Biryani.jpg`,
+  "mutton biryani": `${WM}/thumb/e/e8/Hyderabadi_Mutton_Biryani.jpg/960px-Hyderabadi_Mutton_Biryani.jpg`,
+  "egg biryani": `${WM}/thumb/1/16/Egg_Biryani_in_a_restaurant.jpg/960px-Egg_Biryani_in_a_restaurant.jpg`,
+  "veg biryani": `${WM}/thumb/2/2f/Veg_biryani.jpg/960px-Veg_biryani.jpg`,
 
-  // Meals / rice
-  "mini meals": "photo-1567337710282-00832b415979",
-  "full veg meals": "photo-1567337710282-00832b415979",
-  "chicken meals": "photo-1567337710282-00832b415979",
-  "curd rice": "photo-1567337710282-00832b415979",
-  "lemon rice": "photo-1596797038530-2c107229654b",
-  "tomato rice": "photo-1596797038530-2c107229654b",
-  "jeera rice": "photo-1596797038530-2c107229654b",
+  // ---- Meals / rice ----
+  "mini meals": `${WM}/thumb/9/96/%279%27_A_Thali%2C_meal_served_in_India.jpg/960px-%279%27_A_Thali%2C_meal_served_in_India.jpg`,
+  "full veg meals": `${WM}/thumb/4/4b/My_traditional_Indian_thali_meal_%2848625245542%29.jpg/960px-My_traditional_Indian_thali_meal_%2848625245542%29.jpg`,
+  "chicken meals": `${WM}/thumb/4/46/Darjeeling%2C_India%2C_Indian_Thali_meal.jpg/960px-Darjeeling%2C_India%2C_Indian_Thali_meal.jpg`,
+  "curd rice": `${WM}/thumb/5/58/Curd_Rice.jpg/960px-Curd_Rice.jpg`,
+  "lemon rice": `${WM}/thumb/b/bb/Lemon_Rice_in_Kerala.jpg/960px-Lemon_Rice_in_Kerala.jpg`,
+  "tomato rice": `${WM}/thumb/b/be/Tomato_Rice_up-close_%281862224148%29.jpg/960px-Tomato_Rice_up-close_%281862224148%29.jpg`,
+  "jeera rice": `${WM}/thumb/b/b8/Jeera_Rice_India.jpg/960px-Jeera_Rice_India.jpg`,
 
-  // Breads
-  "butter naan": "photo-1610057099443-fde8c4d50f91",
-  "plain naan": "photo-1610057099443-fde8c4d50f91",
-  "butter roti": "photo-1626074353765-517a681e40be",
-  "plain roti": "photo-1626074353765-517a681e40be",
+  // ---- Breads ----
+  "butter naan": `${WM}/thumb/8/8f/Butter_Naan_with_three_different_Indian_curry.jpg/960px-Butter_Naan_with_three_different_Indian_curry.jpg`,
+  "plain naan": `${WM}/thumb/4/4e/Annapurna_Naan.jpg/960px-Annapurna_Naan.jpg`,
+  "butter roti": `${WM}/thumb/7/74/2020-05-08_19_34_28_Chapati_being_made_in_a_pan_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg/960px-2020-05-08_19_34_28_Chapati_being_made_in_a_pan_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg`,
+  "plain roti": `${WM}/thumb/f/fe/2_Chapati_warm_and_ready_to_be_eaten.jpg/960px-2_Chapati_warm_and_ready_to_be_eaten.jpg`,
 
-  // Veg curries
-  "paneer butter masala": "photo-1631452180519-c014fe946bc7",
-  "kadai paneer": "photo-1567188040759-fb8a883dc6d8",
-  "palak paneer": "photo-1585937421612-70a008356fbe",
-  "chilli paneer": "photo-1567188040759-fb8a883dc6d8",
-  "mushroom masala": "photo-1585937421612-70a008356fbe",
-  "mixed veg curry": "photo-1585937421612-70a008356fbe",
-  "dal tadka": "photo-1546833998-877b37c2e5c6",
-  "dal fry": "photo-1546833998-877b37c2e5c6",
+  // ---- Veg curries ----
+  "paneer butter masala": `${WM}/thumb/7/7e/Paneer_Butter_Masala_3.jpg/960px-Paneer_Butter_Masala_3.jpg`,
+  "kadai paneer": `${WM}/thumb/f/fc/Kadai_Paneer_Recipe.JPG/960px-Kadai_Paneer_Recipe.JPG`,
+  "palak paneer": `${WM}/thumb/a/a2/Palak_Paneer_curry_on_plate.jpg/960px-Palak_Paneer_curry_on_plate.jpg`,
+  "chilli paneer": `${WM}/thumb/2/2c/Chilly_Paneer_01.jpg/960px-Chilly_Paneer_01.jpg`,
+  "mushroom masala": `${WM}/thumb/7/7f/Mushroom_masala_on_white_rice%2C_with_shrimp_and_black_olives_-_Massachusetts.jpg/960px-Mushroom_masala_on_white_rice%2C_with_shrimp_and_black_olives_-_Massachusetts.jpg`,
+  "mixed veg curry": `${WM}/4/49/Vegetarian_Curry.jpeg`,
+  "dal tadka": `${WM}/thumb/0/00/Dal_tadka_and_chapati.jpg/960px-Dal_tadka_and_chapati.jpg`,
+  "dal fry": `${WM}/thumb/b/b1/Dal_Fry_Recipe_In_Dhaba_Style_From_Indian_Cuisine_By_Sonia_Goyal.jpg/960px-Dal_Fry_Recipe_In_Dhaba_Style_From_Indian_Cuisine_By_Sonia_Goyal.jpg`,
 
-  // Non-veg curries & fries
-  "butter chicken": "photo-1588166524941-3bf61a9c41db",
-  "kadai chicken": "photo-1604908176997-125f25cc6f3d",
-  "chicken curry": "photo-1604908176997-125f25cc6f3d",
-  "chicken 65": "photo-1626082927389-6cd097cdc6ec",
-  "chicken fry": "photo-1626082927389-6cd097cdc6ec",
-  "chilli chicken": "photo-1626082927389-6cd097cdc6ec",
-  "dragon chicken": "photo-1626082927389-6cd097cdc6ec",
-  "chicken lollipop": "photo-1626082927389-6cd097cdc6ec",
-  "mutton curry": "photo-1589302168068-964664d93dc0",
-  "mutton fry": "photo-1589302168068-964664d93dc0",
-  "fish curry": "photo-1626509653291-18d9a934b9db",
-  "fish fry": "photo-1626509653291-18d9a934b9db",
-  "egg curry": "photo-1607301405390-d831c242f59b",
-  "omelette": "photo-1607301405390-d831c242f59b",
+  // ---- Non-veg curries & fries ----
+  "butter chicken": `${WM}/thumb/f/fb/Butter_Chicken%2C_City_Grill_Kottayam.jpg/960px-Butter_Chicken%2C_City_Grill_Kottayam.jpg`,
+  "kadai chicken": `${WM}/thumb/4/48/Kadhai_chicken-_Gorakhpur-_Uttar_Pradesh-_001.jpg/960px-Kadhai_chicken-_Gorakhpur-_Uttar_Pradesh-_001.jpg`,
+  "chicken curry": `${WM}/e/e4/Indian_Curry_Chicken.jpg`,
+  "chicken 65": `${WM}/thumb/5/5d/Chicken_65_%28Dish%29.jpg/960px-Chicken_65_%28Dish%29.jpg`,
+  "chicken fry": `${WM}/thumb/1/15/Chicken_ghee_roast.jpg/960px-Chicken_ghee_roast.jpg`,
+  "chilli chicken": `${WM}/thumb/4/45/Chicken_Chilli.JPG/1920px-Chicken_Chilli.JPG`,
+  "dragon chicken": `${WM}/thumb/4/4e/Kadhai_Chicken_Fry.jpg/960px-Kadhai_Chicken_Fry.jpg`,
+  "chicken lollipop": `${WM}/thumb/a/a1/Chicken_Lollipop.jpg/960px-Chicken_Lollipop.jpg`,
+  "mutton curry": `${WM}/thumb/8/80/Bengali_Mutton_Curry.JPG/1920px-Bengali_Mutton_Curry.JPG`,
+  "mutton fry": `${WM}/thumb/8/80/Bengali_Mutton_Curry.JPG/1920px-Bengali_Mutton_Curry.JPG`,
+  "fish curry": `${WM}/thumb/2/28/Alappy_Fish_Curry.JPG/960px-Alappy_Fish_Curry.JPG`,
+  "fish fry": `${WM}/f/ff/Indian_Style_Fish_Fry.jpg`,
+  "egg curry": `${WM}/thumb/f/fb/Egg_curry_Indian_style.jpg/960px-Egg_curry_Indian_style.jpg`,
+  "omelette": `${WM}/thumb/7/7f/Omelette_3.jpg/960px-Omelette_3.jpg`,
 
-  // Chinese
-  "veg fried rice": "photo-1603133872878-684f208fb84b",
-  "paneer fried rice": "photo-1603133872878-684f208fb84b",
-  "egg fried rice": "photo-1603133872878-684f208fb84b",
-  "chicken fried rice": "photo-1603133872878-684f208fb84b",
-  "veg noodles": "photo-1552611052-33e04de081de",
-  "egg noodles": "photo-1552611052-33e04de081de",
-  "chicken noodles": "photo-1552611052-33e04de081de",
-  "gobi manchurian": "photo-1626200419199-391ae4be7a41",
-  "veg manchurian": "photo-1626200419199-391ae4be7a41",
-  "chicken manchurian": "photo-1552611052-33e04de081de",
+  // ---- Chinese ----
+  "veg fried rice": `${WM}/thumb/a/a7/Veg_Fried_Rice_%2851465%29.jpg/960px-Veg_Fried_Rice_%2851465%29.jpg`,
+  "paneer fried rice": `${WM}/thumb/c/c9/Veg_fried_rice_2.jpg/960px-Veg_fried_rice_2.jpg`,
+  "egg fried rice": `${WM}/thumb/3/30/Fried_rice_with_chicken_and_egg.jpg/960px-Fried_rice_with_chicken_and_egg.jpg`,
+  "chicken fried rice": `${WM}/thumb/7/71/Fried_rice_with_chicken_%2817234644521%29.jpg/960px-Fried_rice_with_chicken_%2817234644521%29.jpg`,
+  "veg noodles": `${WM}/thumb/a/a9/Hakka_Noodles_Veg.jpg/960px-Hakka_Noodles_Veg.jpg`,
+  "egg noodles": `${WM}/thumb/e/e4/Veg_noodles_made_by_me.jpg/960px-Veg_noodles_made_by_me.jpg`,
+  "chicken noodles": `${WM}/thumb/9/9b/Chicken_noodles_with_sauce.jpg/960px-Chicken_noodles_with_sauce.jpg`,
+  "gobi manchurian": `${WM}/e/e8/Gobi_manchurian.jpg`,
+  "veg manchurian": `${WM}/9/9f/Hakka_Noodles%2C_Veg_Manchurian_PK009.jpg`,
+  "chicken manchurian": `${WM}/thumb/2/2d/Sticky_Rice%2C_chiken_Manchurian%2C_PK006.jpg/960px-Sticky_Rice%2C_chiken_Manchurian%2C_PK006.jpg`,
 
-  // Beverages — each is its own dedicated photo
-  "mineral water": "photo-1616118132534-381148898bb4",
-  "soft drink": "photo-1554866585-cd94860890b7",
-  "buttermilk": "photo-1628088062854-d1870b4553da",
-  "fresh lime soda": "photo-1621263764928-df1444c5e859",
-  "tea": "photo-1571934811356-5cc061b6821f",
-  "coffee": "photo-1509042239860-f550ce710b93",
+  // ---- Beverages ----
+  "mineral water": `${WM}/thumb/b/b6/Kangso_Mineral_Water_Bottling_Factory_-_03.jpg/960px-Kangso_Mineral_Water_Bottling_Factory_-_03.jpg`,
+  "soft drink": `${WM}/thumb/e/e8/15-09-26-RalfR-WLC-0098_-_Coca-Cola_glass_bottle_%28Germany%29.jpg/960px-15-09-26-RalfR-WLC-0098_-_Coca-Cola_glass_bottle_%28Germany%29.jpg`,
+  "buttermilk": `${WM}/thumb/2/23/Buttermilk-%28right%29-and-Milk-%28left%29.jpg/1920px-Buttermilk-%28right%29-and-Milk-%28left%29.jpg`,
+  "fresh lime soda": `${WM}/thumb/d/d3/Cider_%28lemon-lime_drink%29.jpg/960px-Cider_%28lemon-lime_drink%29.jpg`,
+  "tea": `${WM}/thumb/6/6a/Masala_Chai.jpg/960px-Masala_Chai.jpg`,
+  "coffee": `${WM}/8/84/Indian_filter_coffee_in_Dabarah.jpg`,
 };
 
-const FALLBACK_ID = "photo-1567337710282-00832b415979";
-export const FALLBACK_IMAGE = `https://images.unsplash.com/${FALLBACK_ID}?auto=format&fit=crop&w=900&q=80`;
+export const FALLBACK_IMAGE = `${WM}/thumb/4/4b/My_traditional_Indian_thali_meal_%2848625245542%29.jpg/960px-My_traditional_Indian_thali_meal_%2848625245542%29.jpg`;
 
 // Longer, more specific keys should match first.
 const sortedKeys = Object.keys(map).sort((a, b) => b.length - a.length);
 
 export function imageFor(name: string): string {
   const key = name.toLowerCase().trim();
-  let hit = map[key];
-  if (!hit) {
-    for (const k of sortedKeys) {
-      if (key.includes(k)) { hit = map[k]; break; }
-    }
+  if (map[key]) return map[key];
+  for (const k of sortedKeys) {
+    if (key.includes(k)) return map[k];
   }
-  const id = hit ?? FALLBACK_ID;
-  return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=80`;
+  return FALLBACK_IMAGE;
 }
