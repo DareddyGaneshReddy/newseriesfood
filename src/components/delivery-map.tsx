@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
-// Restaurant coordinates (New Series Food Corner)
-const RESTAURANT: [number, number] = [12.9758, 77.6096];
-const RESTAURANT_LABEL = "New Series Food Corner";
+// Delivery start location (Vijayawada - Singh Nagar - Dabha Kotlu Center)
+const RESTAURANT: [number, number] = [16.5373364, 80.6364737];
+const RESTAURANT_LABEL = "Vijayawada - Singh Nagar - Dabha Kotlu Center";
 
 const STAGE_PROGRESS: Record<string, number> = {
   placed: 0,
