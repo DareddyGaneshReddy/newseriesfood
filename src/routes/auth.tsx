@@ -23,6 +23,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   const goNext = () => nav({ to: next ?? "/" });
 
@@ -31,24 +32,36 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email, password,
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim().toLowerCase(), password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
             data: { full_name: name || null },
           },
         });
         if (error) throw error;
-        toast.success("Account created. Check your email if confirmation is required.");
-        goNext();
+        if (data.session) {
+          toast.success("Account created. Welcome!");
+          goNext();
+        } else {
+          setConfirmationSent(true);
+          toast.success("Check your email to confirm your account.");
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
         if (error) throw error;
         toast.success("Welcome back!");
         goNext();
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message.toLowerCase() : "";
+      if (message.includes("email not confirmed")) {
+        toast.error("Please confirm your email before signing in.");
+      } else if (message.includes("invalid login credentials")) {
+        toast.error("Invalid email or password. If you just created the account, confirm your email first.");
+      } else {
+        toast.error(err instanceof Error ? err.message : "Something went wrong");
+      }
     } finally {
       setBusy(false);
     }
@@ -56,14 +69,30 @@ function AuthPage() {
 
   const google = async () => {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) {
-      toast.error("Google sign-in failed");
+    try {
+      try {
+        const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+        window.sessionStorage.setItem("auth-next", destination);
+      } catch {
+        // The callback safely falls back to home when session storage is unavailable.
+      }
+
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}/auth/callback`,
+      });
+      if (result.error) {
+        toast.error(result.error.message || "Google sign-in failed");
+        return;
+      }
+      if (result.redirected) return;
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) throw new Error("Google sign-in did not create a session");
+      goNext();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Google sign-in failed");
+    } finally {
       setBusy(false);
-      return;
     }
-    if (result.redirected) return;
-    goNext();
   };
 
   return (
@@ -96,6 +125,11 @@ function AuthPage() {
           <span className="h-px flex-1 bg-border" />or<span className="h-px flex-1 bg-border" />
         </div>
 
+        {confirmationSent && mode === "signup" ? (
+          <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
+            We sent a confirmation link to <span className="font-semibold text-foreground">{email}</span>. Confirm it, then return here to sign in.
+          </div>
+        ) : (
         <form onSubmit={submit} className="space-y-3">
           {mode === "signup" && (
             <Field icon={<User className="h-4 w-4" />} label="Name">
@@ -116,6 +150,7 @@ function AuthPage() {
             {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
           </button>
         </form>
+        )}
 
         <button
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
