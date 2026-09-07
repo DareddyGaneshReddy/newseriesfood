@@ -149,15 +149,15 @@ function AuthPage() {
         return;
       }
 
-      // In an app-wrapper webview (e.g. the Median APK build) the Lovable
-      // broker's OAuth state cannot survive the external browser, so use
-      // Supabase's own PKCE flow: the verifier stays in this webview and only
-      // the code travels, coming back through /auth/bridge + the app scheme.
+      // App-wrapper builds (Median APK): launch the managed Google sign-in
+      // itself into the app browser so the whole round trip stays in one
+      // browser context, and let /auth/bridge hand the result back into the app.
       if (isEmbeddedAppWebView()) {
-        const { error } = await startWrapperGoogleOAuth();
+        const { error } = startWrapperGoogleOAuth();
         if (error) toast.error(error);
         return;
       }
+
 
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
