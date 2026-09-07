@@ -4,7 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth/callback")({
   head: () => ({
-    meta: [{ title: "Completing sign in — New Series Food Corner" }],
+    meta: [
+      { title: "Completing sign in — New Series Food Corner" },
+      { name: "description", content: "Securely completing your New Series Food Corner sign-in." },
+      { property: "og:title", content: "Completing sign in — New Series Food Corner" },
+      { property: "og:description", content: "Securely completing your New Series Food Corner sign-in." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
   }),
   component: AuthCallbackPage,
 });

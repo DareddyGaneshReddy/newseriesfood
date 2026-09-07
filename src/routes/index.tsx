@@ -18,13 +18,6 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
-}
-
 function HomePage() {
   const cats = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
   const menu = useQuery({ queryKey: ["menu"], queryFn: fetchMenu });
@@ -39,7 +32,7 @@ function HomePage() {
         <div className="flex items-center gap-2">
           <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[oklch(0.65_0.15_140)]" />
           <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            {greeting()}
+            Fresh today
           </div>
         </div>
         <h1 className="mt-1 text-[30px] font-semibold leading-[1.05] tracking-tight">
