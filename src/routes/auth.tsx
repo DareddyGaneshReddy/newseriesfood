@@ -13,6 +13,7 @@ import {
   rememberAuthDestination,
   signInWithMedianGoogle,
 } from "@/lib/webview";
+import { startWrapperGoogleOAuth } from "@/lib/oauth-pkce";
 
 const searchSchema = z.object({ next: z.string().optional() });
 
@@ -148,14 +149,18 @@ function AuthPage() {
         return;
       }
 
-      // In an app-wrapper webview (e.g. the Median APK build) popups and
-      // cross-window messaging are unreliable, so return to a plain public
-      // same-origin URL and let the callback page pick up the session.
-      const inWebView = isEmbeddedAppWebView();
+      // In an app-wrapper webview (e.g. the Median APK build) the Lovable
+      // broker's OAuth state cannot survive the external browser, so use
+      // Supabase's own PKCE flow: the verifier stays in this webview and only
+      // the code travels, coming back through /auth/bridge + the app scheme.
+      if (isEmbeddedAppWebView()) {
+        const { error } = await startWrapperGoogleOAuth();
+        if (error) toast.error(error);
+        return;
+      }
+
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: inWebView
-          ? `${window.location.origin}/auth/callback`
-          : window.location.origin,
+        redirect_uri: window.location.origin,
         extraParams: { prompt: "select_account" },
       });
       if (result.error) {
