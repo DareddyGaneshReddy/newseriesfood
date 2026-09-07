@@ -6,11 +6,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const searchSchema = z.object({ next: z.string().optional() });
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Sign in — New Series Food Corner" }] }),
+  head: () => ({
+    meta: [
+      { title: "Sign in — New Series Food Corner" },
+      { name: "description", content: "Sign in to New Series Food Corner to place orders, track deliveries, and manage your food profile." },
+      { property: "og:title", content: "Sign in — New Series Food Corner" },
+      { property: "og:description", content: "Access your New Series Food Corner account for orders, delivery tracking, and saved details." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   validateSearch: (s) => searchSchema.parse(s),
   component: AuthPage,
 });
@@ -24,16 +34,40 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
-  const goNext = () => nav({ to: next ?? "/" });
+  const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  const goNext = () => nav({ to: destination });
+
+  const sendPasswordSetup = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      toast.error("Enter your email first.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setResetSent(true);
+      toast.success("Password setup link sent. Check your email.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send password setup email");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim().toLowerCase(), password,
+          email: normalizedEmail, password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
             data: { full_name: name || null },
@@ -48,8 +82,9 @@ function AuthPage() {
           toast.success("Check your email to confirm your account.");
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
         if (error) throw error;
+        if (!data.user) throw new Error("Sign in did not create a session");
         toast.success("Welcome back!");
         goNext();
       }
@@ -58,7 +93,7 @@ function AuthPage() {
       if (message.includes("email not confirmed")) {
         toast.error("Please confirm your email before signing in.");
       } else if (message.includes("invalid login credentials")) {
-        toast.error("Invalid email or password. If you just created the account, confirm your email first.");
+        toast.error("Invalid password, or this email was created with Google. Use Set password below.");
       } else {
         toast.error(err instanceof Error ? err.message : "Something went wrong");
       }
@@ -71,14 +106,14 @@ function AuthPage() {
     setBusy(true);
     try {
       try {
-        const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
         window.sessionStorage.setItem("auth-next", destination);
       } catch {
         // The callback safely falls back to home when session storage is unavailable.
       }
 
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/auth/callback`,
+        redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
       });
       if (result.error) {
         toast.error(result.error.message || "Google sign-in failed");
@@ -149,6 +184,22 @@ function AuthPage() {
           >
             {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
           </button>
+          {mode === "signin" && (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={sendPasswordSetup}
+              className="mt-1 h-auto w-full rounded-2xl py-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              Set or reset password
+            </Button>
+          )}
+          {resetSent && (
+            <p className="text-center text-xs text-muted-foreground">
+              Open the email link to set your password, then return here to sign in.
+            </p>
+          )}
         </form>
         )}
 
