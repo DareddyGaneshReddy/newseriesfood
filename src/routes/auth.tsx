@@ -7,7 +7,12 @@ import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { isEmbeddedAppWebView, rememberAuthDestination } from "@/lib/webview";
+import {
+  canUseMedianGoogleSignIn,
+  isEmbeddedAppWebView,
+  rememberAuthDestination,
+  signInWithMedianGoogle,
+} from "@/lib/webview";
 
 const searchSchema = z.object({ next: z.string().optional() });
 
@@ -61,6 +66,28 @@ function AuthPage() {
     }
   };
 
+  const resendConfirmation = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      toast.error("Enter your email first.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: normalizedEmail,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
+      toast.success("A new confirmation link has been sent.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not resend the confirmation email");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
@@ -107,6 +134,19 @@ function AuthPage() {
     setBusy(true);
     try {
       rememberAuthDestination(destination);
+
+      if (canUseMedianGoogleSignIn()) {
+        const idToken = await signInWithMedianGoogle();
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: idToken,
+        });
+        if (error) throw error;
+        if (!data.user) throw new Error("Google sign-in did not create a session");
+        toast.success("Welcome!");
+        goNext();
+        return;
+      }
 
       // In an app-wrapper webview (e.g. the Median APK build) popups and
       // cross-window messaging are unreliable, so return to a plain public
@@ -171,7 +211,16 @@ function AuthPage() {
 
         {confirmationSent && mode === "signup" ? (
           <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
-            We sent a confirmation link to <span className="font-semibold text-foreground">{email}</span>. Confirm it, then return here to sign in.
+            <p>We sent a confirmation link to <span className="font-semibold text-foreground">{email}</span>. Confirm it, then return here to sign in.</p>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={resendConfirmation}
+              className="mt-3 h-auto px-0 py-1 text-xs font-semibold text-primary hover:bg-transparent hover:text-primary"
+            >
+              Resend confirmation email
+            </Button>
           </div>
         ) : (
         <form onSubmit={submit} className="space-y-3">
