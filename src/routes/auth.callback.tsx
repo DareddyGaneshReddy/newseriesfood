@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { completeAuthFromUrl } from "@/lib/auth-return";
+import { takeAuthDestination } from "@/lib/webview";
 
 export const Route = createFileRoute("/auth/callback")({
   head: () => ({
@@ -16,49 +18,38 @@ export const Route = createFileRoute("/auth/callback")({
   component: AuthCallbackPage,
 });
 
-function getDestination() {
-  try {
-    const stored = window.sessionStorage.getItem("auth-next");
-    window.sessionStorage.removeItem("auth-next");
-    return stored && stored.startsWith("/") && !stored.startsWith("//") ? stored : "/";
-  } catch {
-    return "/";
-  }
-}
-
 function AuthCallbackPage() {
   const navigate = useNavigate();
   const [message, setMessage] = useState("Finishing sign in…");
 
   useEffect(() => {
     let active = true;
-    const destination = getDestination();
     let subscription: { unsubscribe: () => void } | undefined;
 
-    const finish = (signedIn: boolean) => {
-      if (!active) return;
-      if (signedIn) {
-        navigate({ to: destination });
-      } else {
-        setMessage("We couldn't complete sign in. Please try again.");
-      }
-    };
+    const run = async () => {
+      const destination = takeAuthDestination();
 
-    const complete = async () => {
       const authState = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_IN" && session) finish(true);
+        if (active && event === "SIGNED_IN" && session) navigate({ to: destination });
       });
       subscription = authState.data.subscription;
 
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        finish(false);
+      const result = await completeAuthFromUrl();
+      if (!active) return;
+      if (result.signedIn) {
+        navigate({ to: destination });
         return;
       }
-      if (data.session) finish(true);
+      // Give a slow wrapper webview a moment to deliver the session.
+      setTimeout(async () => {
+        const { data } = await supabase.auth.getSession();
+        if (!active) return;
+        if (data.session) navigate({ to: destination });
+        else setMessage(result.error ?? "We couldn't complete sign in. Please try again.");
+      }, 2500);
     };
 
-    void complete();
+    void run();
 
     return () => {
       active = false;
@@ -71,6 +62,9 @@ function AuthCallbackPage() {
       <div>
         <div className="text-4xl">🍽️</div>
         <p className="mt-4 text-sm text-muted-foreground">{message}</p>
+        <a href="/auth" className="mt-6 inline-block text-xs font-semibold text-primary">
+          Back to sign in
+        </a>
       </div>
     </main>
   );

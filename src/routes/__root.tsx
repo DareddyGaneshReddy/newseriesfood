@@ -100,11 +100,34 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+// App wrappers (e.g. an APK built from this site) can hand the sign-in return
+// back on any URL, so finish it wherever it lands.
+function AuthReturnHandler() {
+  useEffect(() => {
+    const raw = window.location.hash.replace(/^#/, "") + "&" + window.location.search.replace(/^\?/, "");
+    if (!/(?:^|[&?])(access_token|code|error|error_description)=/.test(raw)) return;
+    if (window.location.pathname.startsWith("/auth/callback")) return;
+    if (window.location.pathname.startsWith("/reset-password")) return;
+
+    void (async () => {
+      const { completeAuthFromUrl } = await import("@/lib/auth-return");
+      const { takeAuthDestination } = await import("@/lib/webview");
+      const result = await completeAuthFromUrl();
+      if (result.signedIn) {
+        const destination = takeAuthDestination();
+        if (destination !== window.location.pathname) window.location.replace(destination);
+      }
+    })();
+  }, []);
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
+        <AuthReturnHandler />
         <Outlet />
         <Toaster position="top-center" richColors closeButton />
       </CartProvider>

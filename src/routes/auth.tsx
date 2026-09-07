@@ -7,6 +7,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { isEmbeddedAppWebView, rememberAuthDestination } from "@/lib/webview";
 
 const searchSchema = z.object({ next: z.string().optional() });
 
@@ -105,18 +106,26 @@ function AuthPage() {
   const google = async () => {
     setBusy(true);
     try {
-      try {
-        window.sessionStorage.setItem("auth-next", destination);
-      } catch {
-        // The callback safely falls back to home when session storage is unavailable.
-      }
+      rememberAuthDestination(destination);
 
+      // In an app-wrapper webview (e.g. the Median APK build) popups and
+      // cross-window messaging are unreliable, so return to a plain public
+      // same-origin URL and let the callback page pick up the session.
+      const inWebView = isEmbeddedAppWebView();
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: inWebView
+          ? `${window.location.origin}/auth/callback`
+          : window.location.origin,
         extraParams: { prompt: "select_account" },
       });
       if (result.error) {
-        toast.error(result.error.message || "Google sign-in failed");
+        const raw = result.error.message || "";
+        const stateIssue = /state/i.test(raw);
+        toast.error(
+          stateIssue
+            ? "Sign-in session expired. Tap Continue with Google again without switching apps."
+            : raw || "Google sign-in failed",
+        );
         return;
       }
       if (result.redirected) return;
