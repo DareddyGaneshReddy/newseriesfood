@@ -7,6 +7,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { isEmbeddedAppWebView, rememberAuthDestination } from "@/lib/webview";
 
 const searchSchema = z.object({ next: z.string().optional() });
 
