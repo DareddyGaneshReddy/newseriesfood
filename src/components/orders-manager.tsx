@@ -316,6 +316,15 @@ Total: ${inr(Number(o.total))}${o.notes ? `\nOrder note: ${o.notes}` : ""}`;
                   )}
                 </div>
 
+                {o.upi_ref && (
+                  <div className="mt-3 rounded-xl border border-border bg-background px-3 py-2 text-[11px]">
+                    <b>UPI reference given by customer:</b> {o.upi_ref}
+                    <div className="mt-0.5 text-muted-foreground">
+                      Check this against your PhonePe / bank statement before confirming.
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => setPaid(o.id, !paid)}
@@ -324,7 +333,7 @@ Total: ${inr(Number(o.total))}${o.notes ? `\nOrder note: ${o.notes}` : ""}`;
                       paid ? "border-border bg-card" : "border-primary bg-primary text-primary-foreground",
                     )}
                   >
-                    {paid ? "Mark unpaid" : "Mark payment received"}
+                    {paid ? "Mark unpaid" : awaiting ? "Confirm payment received" : "Mark payment received"}
                   </button>
                   <button
                     onClick={() => printTicket(o, customer)}
@@ -333,6 +342,16 @@ Total: ${inr(Number(o.total))}${o.notes ? `\nOrder note: ${o.notes}` : ""}`;
                     <Printer className="h-3.5 w-3.5" /> Ticket
                   </button>
                 </div>
+
+                {!paid && o.status !== "cancelled" && (
+                  <button
+                    onClick={() => rejectPayment(o.id)}
+                    className="press mt-2 w-full rounded-full border border-destructive/40 px-3 py-2 text-[11px] font-semibold text-destructive"
+                  >
+                    Payment not received — cancel this order
+                  </button>
+                )}
+
 
                 <div className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Update status</div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
