@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { ArrowLeft, Mail, Lock, User } from "lucide-react";
@@ -23,8 +23,13 @@ export const Route = createFileRoute("/auth")({
     ],
   }),
   validateSearch: (s) => searchSchema.parse(s),
-  component: AuthPage,
+  component: AuthRoute,
 });
+
+function AuthRoute() {
+  const location = useLocation();
+  return location.pathname === "/auth" ? <AuthPage /> : <Outlet />;
+}
 
 function AuthPage() {
   const nav = useNavigate();
