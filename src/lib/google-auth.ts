@@ -4,10 +4,9 @@ import { isEmbeddedAppWebView } from "@/lib/webview";
 /**
  * Google sign-in, handled entirely by Supabase Auth.
  *
- * The same call works on the web and inside a Capacitor Android build: the
- * authorization request is a normal top-level navigation and Supabase returns
- * to `${origin}/auth/callback`, which the Android app claims through App Links
- * (assetlinks.json on the published domain), so the user lands back in the app.
+ * Website OAuth returns directly to the callback page. Median OAuth returns to
+ * a public bridge first, which reopens the original app WebView through its
+ * configured custom scheme so the session is stored in the correct context.
  */
 export async function signInWithGoogle(): Promise<{ error?: string }> {
   // A normal browser can finish OAuth in the same storage context. Median opens
