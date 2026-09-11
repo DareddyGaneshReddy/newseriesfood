@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { MenuManager } from "@/components/menu-manager";
 import { PaymentsManager } from "@/components/payments-manager";
+import { OrdersManager } from "@/components/orders-manager";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — New Series Food Corner" }, { name: "robots", content: "noindex" }] }),
