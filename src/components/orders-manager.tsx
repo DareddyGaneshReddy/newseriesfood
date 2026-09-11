@@ -208,6 +208,8 @@ Total: ${inr(Number(o.total))}${o.notes ? `\nOrder note: ${o.notes}` : ""}`;
         const customer = customers.data?.[o.user_id];
         const isOpen = open === o.id;
         const paid = o.payment_status === "paid";
+        const awaiting = o.payment_status === "awaiting_verification";
+        const failed = o.payment_status === "failed";
         const itemCount = o.order_items?.reduce((s, i) => s + i.quantity, 0) ?? 0;
         return (
           <div key={o.id} className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-soft">
