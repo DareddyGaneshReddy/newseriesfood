@@ -3,17 +3,11 @@ import { useState } from "react";
 import { z } from "zod";
 import { ArrowLeft, Mail, Lock, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  canUseMedianGoogleSignIn,
-  isEmbeddedAppWebView,
-  rememberAuthDestination,
-  signInWithMedianGoogle,
-} from "@/lib/webview";
-import { startWrapperGoogleOAuth } from "@/lib/oauth-pkce";
+import { rememberAuthDestination } from "@/lib/webview";
+import { signInWithGoogle } from "@/lib/google-auth";
 
 const searchSchema = z.object({ next: z.string().optional() });
 
