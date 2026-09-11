@@ -65,18 +65,6 @@ function AdminPage() {
   const revenueToday = todaysOrders.reduce((s, o) => s + Number(o.total), 0);
   const liveCount = orders.data?.filter((o) => !["delivered", "cancelled"].includes(o.status as string)).length ?? 0;
 
-  const updateOrder = async (id: string, status: (typeof ORDER_STATUSES)[number]) => {
-    const { error } = await supabase.from("orders").update({ status }).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success(`Order → ${status}`);
-    qc.invalidateQueries({ queryKey: ["admin-orders"] });
-  };
-
-  const toggleAvailability = async (id: string, current: boolean) => {
-    const { error } = await supabase.from("menu_items").update({ is_available: !current }).eq("id", id);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["menu"] });
-  };
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-[440px] bg-background">
