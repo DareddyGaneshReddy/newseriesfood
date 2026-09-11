@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 
 const SCHEME = "nsfoodxljdzzw";
 const APP_HOST = "newseriesfood.lovable.app";
-const APP_PACKAGE = "co.median.android.xljdzzw";
 const CALLBACK_PATH = "/auth/callback";
 
 const ALLOWED_AUTH_PARAMS = new Set([
@@ -55,39 +54,31 @@ function collectAuthParams(): URLSearchParams {
   return forwarded;
 }
 
-// Different Android launchers/wrappers accept different deep-link forms, so try
-// each known form in order until one hands control back to the app.
-function buildCandidates(query: string): string[] {
-  return [
-    `intent://${APP_HOST}${CALLBACK_PATH}?${query}#Intent;scheme=${SCHEME};package=${APP_PACKAGE};S.browser_fallback_url=;end`,
-    `${SCHEME}://${APP_HOST}${CALLBACK_PATH}?${query}`,
-    `${SCHEME}.https://${APP_HOST}${CALLBACK_PATH}?${query}`,
-  ];
+function buildAppCallback(query: string): string {
+  return `${SCHEME}.https://${APP_HOST}${CALLBACK_PATH}?${query}`;
 }
 
 function AuthBridgePage() {
-  const { candidates, hasError } = useMemo(() => {
+  const { appCallback, hasError } = useMemo(() => {
     const params = collectAuthParams();
-    return { candidates: buildCandidates(params.toString()), hasError: params.has("error") };
+    return { appCallback: buildAppCallback(params.toString()), hasError: params.has("error") };
   }, []);
   const [showManual, setShowManual] = useState(false);
 
   useEffect(() => {
-    const timers: number[] = [];
-    candidates.forEach((url, index) => {
-      timers.push(
-        window.setTimeout(() => {
-          try {
-            window.location.href = url;
-          } catch {
-            // Ignore: the next candidate form will be attempted.
-          }
-        }, index * 900),
-      );
-    });
-    timers.push(window.setTimeout(() => setShowManual(true), 1200));
-    return () => timers.forEach((t) => window.clearTimeout(t));
-  }, [candidates]);
+    const openTimer = window.setTimeout(() => {
+      try {
+        window.location.assign(appCallback);
+      } catch {
+        setShowManual(true);
+      }
+    }, 150);
+    const manualTimer = window.setTimeout(() => setShowManual(true), 1200);
+    return () => {
+      window.clearTimeout(openTimer);
+      window.clearTimeout(manualTimer);
+    };
+  }, [appCallback]);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[440px] items-center justify-center bg-background px-6 text-center">
@@ -104,16 +95,12 @@ function AuthBridgePage() {
           {hasError ? "Return to the app to try signing in again." : "Your Google account was verified. Opening the app…"}
         </p>
         {showManual && (
-          <div className="mt-6 flex flex-col items-center gap-3">
-            {candidates.map((url, index) => (
-              <Button key={url} asChild variant={index === 0 ? "default" : "outline"} className="rounded-full">
-                <a href={url}>
-                  {index === 0 ? "Return to app" : `Try another way (${index + 1})`}
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </a>
-              </Button>
-            ))}
-          </div>
+          <Button asChild className="mt-6 rounded-full">
+            <a href={appCallback}>
+              Return to app
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
+          </Button>
         )}
       </div>
     </main>
