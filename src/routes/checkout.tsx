@@ -40,6 +40,8 @@ function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [locating, setLocating] = useState(false);
   const [upiSettings, setUpiSettings] = useState<{ vpa: string | null; payeeName: string | null }>({ vpa: null, payeeName: null });
+  const [payRef, setPayRef] = useState<string | null>(null);
+  const [utr, setUtr] = useState("");
 
   useEffect(() => {
     supabase
@@ -122,17 +124,8 @@ function CheckoutPage() {
     );
   }
 
-  const place = async (upiAppScheme?: (params: string) => string) => {
-    if (!user) return;
-    if (orderType === "delivery" && !addr.trim()) {
-      toast.error("Please enter a delivery address");
-      return;
-    }
-    if (pay === "upi" && (!upiSettings.vpa || !isValidVpa(upiSettings.vpa))) {
-      toast.error("UPI is not configured yet. Please choose another method or contact the restaurant.");
-      return;
-    }
-    setPlacing(true);
+  const createOrder = async (payment: { status: string; upiRef?: string | null }) => {
+    if (!user) return null;
     const { data: order, error } = await supabase.from("orders").insert({
       user_id: user.id,
       status: "placed",
@@ -145,12 +138,13 @@ function CheckoutPage() {
       total,
       address_line: orderType === "delivery" ? addr : null,
       notes: notes || null,
+      payment_status: payment.status,
+      upi_ref: payment.upiRef ?? null,
     }).select("id, code").single();
 
     if (error || !order) {
-      setPlacing(false);
       toast.error("Could not place order. Please try again.");
-      return;
+      return null;
     }
 
     const rows = items.map((i) => ({
@@ -163,29 +157,78 @@ function CheckoutPage() {
     }));
     const { error: itemsErr } = await supabase.from("order_items").insert(rows);
     if (itemsErr) {
-      setPlacing(false);
       toast.error("Order could not be finalized.");
+      return null;
+    }
+    return order;
+  };
+
+  // Non-UPI methods place the order immediately.
+  const place = async () => {
+    if (!user) return;
+    if (orderType === "delivery" && !addr.trim()) {
+      toast.error("Please enter a delivery address");
       return;
     }
+    setPlacing(true);
+    const order = await createOrder({ status: "pending" });
+    setPlacing(false);
+    if (!order) return;
     clear();
     toast.success(`Order ${order.code} placed`);
-
-    if (pay === "upi" && upiAppScheme && upiSettings.vpa) {
-      const params = buildUpiParams({
-        vpa: upiSettings.vpa,
-        payeeName: upiSettings.payeeName || "New Series Food Corner",
-        amount: total,
-        note: `Order ${order.code}`,
-        txnRef: order.code,
-      });
-      // Launch UPI intent — Android/iOS will open the target app.
-      window.location.href = upiAppScheme(params);
-      setTimeout(() => nav({ to: "/order/$id", params: { id: order.id } }), 800);
-      return;
-    }
-
     nav({ to: "/order/$id", params: { id: order.id } });
   };
+
+  // UPI: open the payment app FIRST. No order exists until payment is confirmed.
+  const startUpiPayment = (appScheme: (params: string) => string) => {
+    if (!user) return;
+    if (orderType === "delivery" && !addr.trim()) {
+      toast.error("Please enter a delivery address");
+      return;
+    }
+    if (!upiSettings.vpa || !isValidVpa(upiSettings.vpa)) {
+      toast.error("UPI is not configured yet. Please choose another method or contact the restaurant.");
+      return;
+    }
+    const ref = `NSF${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 90 + 10)}`;
+    setPayRef(ref);
+    setUtr("");
+    const params = buildUpiParams({
+      vpa: upiSettings.vpa,
+      payeeName: upiSettings.payeeName || "New Series Food Corner",
+      amount: total,
+      note: `Order ${ref}`,
+      txnRef: ref,
+    });
+    window.location.href = appScheme(params);
+  };
+
+  const confirmUpiPaid = async () => {
+    const cleanUtr = utr.replace(/\s+/g, "");
+    if (!/^[0-9]{12}$/.test(cleanUtr)) {
+      toast.error("Enter the 12-digit UPI transaction / UTR number from your payment app.");
+      return;
+    }
+    setPlacing(true);
+    const order = await createOrder({ status: "awaiting_verification", upiRef: `${cleanUtr} (ref ${payRef})` });
+    setPlacing(false);
+    if (!order) return;
+    setPayRef(null);
+    clear();
+    toast.success(`Payment submitted — order ${order.code} placed`, {
+      description: "The restaurant is verifying your payment now.",
+    });
+    nav({ to: "/order/$id", params: { id: order.id } });
+  };
+
+  const cancelUpiPayment = () => {
+    setPayRef(null);
+    setUtr("");
+    toast.error("Transaction failed — order cancelled", {
+      description: "Nothing was ordered. Your cart is still saved, you can try again.",
+    });
+  };
+
 
   return (
     <MobileShell showTopBar={false} showBottomNav={false}>
@@ -249,7 +292,7 @@ function CheckoutPage() {
                     <button
                       key={app.id}
                       disabled={placing}
-                      onClick={() => place(app.scheme)}
+                      onClick={() => startUpiPayment(app.scheme)}
                       className="press flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-left text-sm font-medium shadow-soft disabled:opacity-60"
                     >
                       <span
@@ -263,8 +306,10 @@ function CheckoutPage() {
                   ))}
                 </div>
                 <p className="mt-2 text-[10px] text-muted-foreground">
-                  Tapping an app places your order and opens it with the amount ready to pay.
+                  Your order is placed only after the payment goes through. If the payment fails or you cancel it,
+                  nothing is ordered.
                 </p>
+
               </>
             ) : (
               <div className="text-[11px] text-muted-foreground">
@@ -297,7 +342,51 @@ function CheckoutPage() {
           </button>
         </div>
       )}
+
+      {payRef && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/50 px-4 pb-4">
+          <div className="mx-auto w-full max-w-[440px] rounded-3xl border border-border/60 bg-card p-5 shadow-lift">
+            <h3 className="text-base font-semibold">Did your payment go through?</h3>
+            <p className="mt-1 text-[12px] text-muted-foreground">
+              You were asked to pay <span className="font-semibold text-foreground">{inr(total)}</span> to{" "}
+              <span className="font-semibold text-foreground">{upiSettings.vpa}</span>. Your order is placed only once
+              the payment is confirmed.
+            </p>
+
+            <label className="mt-4 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              UPI transaction / UTR number
+            </label>
+            <input
+              value={utr}
+              onChange={(e) => setUtr(e.target.value)}
+              inputMode="numeric"
+              maxLength={16}
+              placeholder="12-digit number from your UPI app"
+              className="mt-1 w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
+            />
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Find it in your payment app under the transaction details (UTR / Transaction ID).
+            </p>
+
+            <button
+              onClick={confirmUpiPaid}
+              disabled={placing}
+              className="press mt-4 w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lift disabled:opacity-70"
+            >
+              {placing ? "Confirming…" : "I've paid — place my order"}
+            </button>
+            <button
+              onClick={cancelUpiPayment}
+              disabled={placing}
+              className="press mt-2 w-full rounded-full border border-destructive/40 px-5 py-3 text-sm font-semibold text-destructive disabled:opacity-70"
+            >
+              Payment failed / cancelled
+            </button>
+          </div>
+        </div>
+      )}
     </MobileShell>
+
   );
 }
 

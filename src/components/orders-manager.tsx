@@ -26,6 +26,7 @@ type AdminOrder = {
   payment_method: string;
   payment_status: string;
   paid_at: string | null;
+  upi_ref: string | null;
   subtotal: number;
   tax: number;
   delivery_fee: number;
@@ -127,6 +128,17 @@ export function OrdersManager() {
     qc.invalidateQueries({ queryKey: ["admin-orders-full"] });
   };
 
+  const rejectPayment = async (id: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ payment_status: "failed", status: "cancelled", paid_at: null })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Payment rejected — order cancelled");
+    qc.invalidateQueries({ queryKey: ["admin-orders-full"] });
+    qc.invalidateQueries({ queryKey: ["admin-orders"] });
+  };
+
   const printTicket = (o: AdminOrder, customer?: { full_name: string | null; phone: string | null }) => {
     const lines = o.order_items
       .map((i) => {
@@ -196,6 +208,8 @@ Total: ${inr(Number(o.total))}${o.notes ? `\nOrder note: ${o.notes}` : ""}`;
         const customer = customers.data?.[o.user_id];
         const isOpen = open === o.id;
         const paid = o.payment_status === "paid";
+        const awaiting = o.payment_status === "awaiting_verification";
+        const failed = o.payment_status === "failed";
         const itemCount = o.order_items?.reduce((s, i) => s + i.quantity, 0) ?? 0;
         return (
           <div key={o.id} className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-soft">
@@ -222,12 +236,15 @@ Total: ${inr(Number(o.total))}${o.notes ? `\nOrder note: ${o.notes}` : ""}`;
                       "flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                       paid
                         ? "bg-[color-mix(in_oklab,var(--olive)_20%,transparent)] text-[oklch(0.4_0.07_118)]"
-                        : "bg-destructive/10 text-destructive",
+                        : awaiting
+                          ? "bg-[color-mix(in_oklab,var(--mustard)_28%,transparent)] text-[oklch(0.45_0.09_80)]"
+                          : "bg-destructive/10 text-destructive",
                     )}
                   >
                     {paid ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                    {paid ? "Paid" : "Unpaid"} · {o.payment_method}
+                    {paid ? "Paid" : awaiting ? "Verify payment" : failed ? "Payment failed" : "Unpaid"} · {o.payment_method}
                   </span>
+
                   <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
                 </div>
               </div>
@@ -299,6 +316,15 @@ Total: ${inr(Number(o.total))}${o.notes ? `\nOrder note: ${o.notes}` : ""}`;
                   )}
                 </div>
 
+                {o.upi_ref && (
+                  <div className="mt-3 rounded-xl border border-border bg-background px-3 py-2 text-[11px]">
+                    <b>UPI reference given by customer:</b> {o.upi_ref}
+                    <div className="mt-0.5 text-muted-foreground">
+                      Check this against your PhonePe / bank statement before confirming.
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => setPaid(o.id, !paid)}
@@ -307,7 +333,7 @@ Total: ${inr(Number(o.total))}${o.notes ? `\nOrder note: ${o.notes}` : ""}`;
                       paid ? "border-border bg-card" : "border-primary bg-primary text-primary-foreground",
                     )}
                   >
-                    {paid ? "Mark unpaid" : "Mark payment received"}
+                    {paid ? "Mark unpaid" : awaiting ? "Confirm payment received" : "Mark payment received"}
                   </button>
                   <button
                     onClick={() => printTicket(o, customer)}
@@ -316,6 +342,16 @@ Total: ${inr(Number(o.total))}${o.notes ? `\nOrder note: ${o.notes}` : ""}`;
                     <Printer className="h-3.5 w-3.5" /> Ticket
                   </button>
                 </div>
+
+                {!paid && o.status !== "cancelled" && (
+                  <button
+                    onClick={() => rejectPayment(o.id)}
+                    className="press mt-2 w-full rounded-full border border-destructive/40 px-3 py-2 text-[11px] font-semibold text-destructive"
+                  >
+                    Payment not received — cancel this order
+                  </button>
+                )}
+
 
                 <div className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Update status</div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
