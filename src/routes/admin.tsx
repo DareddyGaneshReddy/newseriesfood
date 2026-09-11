@@ -112,38 +112,8 @@ function AdminPage() {
         </div>
       )}
 
-      {tab === "orders" && (
-        <div className="flex flex-col gap-3 px-5 pt-4 pb-10">
-          {orders.data?.length === 0 && <div className="pt-8 text-center text-sm text-muted-foreground">No orders yet.</div>}
-          {orders.data?.map((o) => (
-            <div key={o.id} className="rounded-2xl border border-border/60 bg-card p-4 shadow-soft">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-sm font-semibold">{o.code}</div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {new Date(o.created_at as string).toLocaleString()} · {o.order_type} · {o.payment_method}
-                  </div>
-                </div>
-                <div className="text-sm font-semibold">{inr(Number(o.total))}</div>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {ORDER_STATUSES.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => updateOrder(o.id, s)}
-                    className={cn(
-                      "press rounded-full border px-2.5 py-1 text-[10px] font-medium",
-                      o.status === s ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground/70",
-                    )}
-                  >
-                    {s.replace(/_/g, " ")}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {tab === "orders" && <OrdersManager />}
+
 
       {tab === "menu" && <MenuManager />}
       {tab === "payments" && <PaymentsManager />}
