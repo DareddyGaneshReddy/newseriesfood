@@ -342,7 +342,51 @@ function CheckoutPage() {
           </button>
         </div>
       )}
+
+      {payRef && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/50 px-4 pb-4">
+          <div className="mx-auto w-full max-w-[440px] rounded-3xl border border-border/60 bg-card p-5 shadow-lift">
+            <h3 className="text-base font-semibold">Did your payment go through?</h3>
+            <p className="mt-1 text-[12px] text-muted-foreground">
+              You were asked to pay <span className="font-semibold text-foreground">{inr(total)}</span> to{" "}
+              <span className="font-semibold text-foreground">{upiSettings.vpa}</span>. Your order is placed only once
+              the payment is confirmed.
+            </p>
+
+            <label className="mt-4 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              UPI transaction / UTR number
+            </label>
+            <input
+              value={utr}
+              onChange={(e) => setUtr(e.target.value)}
+              inputMode="numeric"
+              maxLength={16}
+              placeholder="12-digit number from your UPI app"
+              className="mt-1 w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
+            />
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Find it in your payment app under the transaction details (UTR / Transaction ID).
+            </p>
+
+            <button
+              onClick={confirmUpiPaid}
+              disabled={placing}
+              className="press mt-4 w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lift disabled:opacity-70"
+            >
+              {placing ? "Confirming…" : "I've paid — place my order"}
+            </button>
+            <button
+              onClick={cancelUpiPayment}
+              disabled={placing}
+              className="press mt-2 w-full rounded-full border border-destructive/40 px-5 py-3 text-sm font-semibold text-destructive disabled:opacity-70"
+            >
+              Payment failed / cancelled
+            </button>
+          </div>
+        </div>
+      )}
     </MobileShell>
+
   );
 }
 
