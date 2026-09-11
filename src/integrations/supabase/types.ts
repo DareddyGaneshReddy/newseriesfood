@@ -272,6 +272,7 @@ export type Database = {
           tax: number
           total: number
           updated_at: string
+          upi_ref: string | null
           user_id: string
         }
         Insert: {
@@ -293,6 +294,7 @@ export type Database = {
           tax?: number
           total: number
           updated_at?: string
+          upi_ref?: string | null
           user_id: string
         }
         Update: {
@@ -314,6 +316,7 @@ export type Database = {
           tax?: number
           total?: number
           updated_at?: string
+          upi_ref?: string | null
           user_id?: string
         }
         Relationships: []
