@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
-import { ArrowLeft, Bike, Store, UtensilsCrossed, Banknote, Smartphone, CreditCard, Wallet, LocateFixed, Loader2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowLeft, Bike, Store, UtensilsCrossed, Banknote, ShieldCheck, LocateFixed, Loader2 } from "lucide-react";
 import { MobileShell } from "@/components/mobile-shell";
 import { useCart } from "@/lib/cart-store";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +10,7 @@ import { useSession } from "@/lib/auth-hook";
 import { inr } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { UPI_APPS, buildUpiParams, isValidVpa } from "@/lib/upi";
+import { createCashfreePayment } from "@/lib/cashfree.functions";
 
 const searchSchema = z.object({
   discount: z.number().default(0),
@@ -20,39 +21,35 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/checkout")({
   validateSearch: (s) => searchSchema.parse(s),
-  head: () => ({ meta: [{ title: "Checkout — New Series Food Corner" }] }),
+  head: () => ({
+    meta: [
+      { title: "Checkout — New Series Food Corner" },
+      { name: "description", content: "Choose delivery, pickup or dine-in and pay securely for your food order." },
+      { property: "og:title", content: "Checkout — New Series Food Corner" },
+      { property: "og:description", content: "Secure checkout for your New Series Food Corner order." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: CheckoutPage,
 });
 
 type OrderType = "delivery" | "pickup" | "dine_in";
-type PayMethod = "cash" | "upi" | "card" | "wallet";
+type PayMethod = "online" | "cash";
 
 function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
   const { discount, tax, delivery, packing } = Route.useSearch();
   const { user, ready } = useSession();
   const nav = useNavigate();
+  const startPayment = useServerFn(createCashfreePayment);
 
   const [orderType, setOrderType] = useState<OrderType>("delivery");
-  const [pay, setPay] = useState<PayMethod>("upi");
+  const [pay, setPay] = useState<PayMethod>("online");
   const [addr, setAddr] = useState("");
   const [notes, setNotes] = useState("");
   const [placing, setPlacing] = useState(false);
   const [locating, setLocating] = useState(false);
-  const [upiSettings, setUpiSettings] = useState<{ vpa: string | null; payeeName: string | null }>({ vpa: null, payeeName: null });
-  const [payRef, setPayRef] = useState<string | null>(null);
-  const [utr, setUtr] = useState("");
-
-  useEffect(() => {
-    supabase
-      .from("payment_settings")
-      .select("upi_vpa, payee_name")
-      .eq("singleton", true)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setUpiSettings({ vpa: data.upi_vpa, payeeName: data.payee_name });
-      });
-  }, []);
 
   const detectLocation = () => {
     if (!("geolocation" in navigator)) {
@@ -98,7 +95,6 @@ function CheckoutPage() {
     );
   };
 
-
   const total = Math.max(0, subtotal + tax + (orderType === "delivery" ? delivery : 0) + packing - discount);
 
   if (ready && !user) {
@@ -124,13 +120,23 @@ function CheckoutPage() {
     );
   }
 
-  const createOrder = async (payment: { status: string; upiRef?: string | null }) => {
-    if (!user) return null;
+  const validate = () => {
+    if (orderType === "delivery" && !addr.trim()) {
+      toast.error("Please enter a delivery address");
+      return false;
+    }
+    return true;
+  };
+
+  // Cash on delivery: order is placed straight away, payment collected at the door.
+  const placeCashOrder = async () => {
+    if (!user || !validate()) return;
+    setPlacing(true);
     const { data: order, error } = await supabase.from("orders").insert({
       user_id: user.id,
       status: "placed",
       order_type: orderType,
-      payment_method: pay,
+      payment_method: "cash",
       subtotal, tax,
       delivery_fee: orderType === "delivery" ? delivery : 0,
       packing_fee: packing,
@@ -138,97 +144,78 @@ function CheckoutPage() {
       total,
       address_line: orderType === "delivery" ? addr : null,
       notes: notes || null,
-      payment_status: payment.status,
-      upi_ref: payment.upiRef ?? null,
+      payment_status: "pending",
     }).select("id, code").single();
 
     if (error || !order) {
+      setPlacing(false);
       toast.error("Could not place order. Please try again.");
-      return null;
-    }
-
-    const rows = items.map((i) => ({
-      order_id: order.id,
-      menu_item_id: i.id.split("::")[0],
-      name: i.name,
-      price: i.price,
-      quantity: i.qty,
-      notes: i.notes ?? null,
-    }));
-    const { error: itemsErr } = await supabase.from("order_items").insert(rows);
-    if (itemsErr) {
-      toast.error("Order could not be finalized.");
-      return null;
-    }
-    return order;
-  };
-
-  // Non-UPI methods place the order immediately.
-  const place = async () => {
-    if (!user) return;
-    if (orderType === "delivery" && !addr.trim()) {
-      toast.error("Please enter a delivery address");
       return;
     }
-    setPlacing(true);
-    const order = await createOrder({ status: "pending" });
+
+    const { error: itemsErr } = await supabase.from("order_items").insert(
+      items.map((i) => ({
+        order_id: order.id,
+        menu_item_id: i.id.split("::")[0],
+        name: i.name,
+        price: i.price,
+        quantity: i.qty,
+        notes: i.notes ?? null,
+      })),
+    );
     setPlacing(false);
-    if (!order) return;
+    if (itemsErr) {
+      toast.error("Order could not be finalized.");
+      return;
+    }
     clear();
     toast.success(`Order ${order.code} placed`);
     nav({ to: "/order/$id", params: { id: order.id } });
   };
 
-  // UPI: open the payment app FIRST. No order exists until payment is confirmed.
-  const startUpiPayment = (appScheme: (params: string) => string) => {
-    if (!user) return;
-    if (orderType === "delivery" && !addr.trim()) {
-      toast.error("Please enter a delivery address");
-      return;
-    }
-    if (!upiSettings.vpa || !isValidVpa(upiSettings.vpa)) {
-      toast.error("UPI is not configured yet. Please choose another method or contact the restaurant.");
-      return;
-    }
-    const ref = `NSF${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 90 + 10)}`;
-    setPayRef(ref);
-    setUtr("");
-    const params = buildUpiParams({
-      vpa: upiSettings.vpa,
-      payeeName: upiSettings.payeeName || "New Series Food Corner",
-      amount: total,
-      note: `Order ${ref}`,
-      txnRef: ref,
-    });
-    window.location.href = appScheme(params);
-  };
-
-  const confirmUpiPaid = async () => {
-    const cleanUtr = utr.replace(/\s+/g, "");
-    if (!/^[0-9]{12}$/.test(cleanUtr)) {
-      toast.error("Enter the 12-digit UPI transaction / UTR number from your payment app.");
-      return;
-    }
+  // Online payment: nothing is ordered here. The order is created only after the
+  // payment gateway itself confirms the money arrived.
+  const payOnline = async () => {
+    if (!user || !validate()) return;
     setPlacing(true);
-    const order = await createOrder({ status: "awaiting_verification", upiRef: `${cleanUtr} (ref ${payRef})` });
-    setPlacing(false);
-    if (!order) return;
-    setPayRef(null);
-    clear();
-    toast.success(`Payment submitted — order ${order.code} placed`, {
-      description: "The restaurant is verifying your payment now.",
-    });
-    nav({ to: "/order/$id", params: { id: order.id } });
-  };
+    try {
+      const session = await startPayment({
+        data: {
+          order_type: orderType,
+          subtotal,
+          tax,
+          delivery_fee: orderType === "delivery" ? delivery : 0,
+          packing_fee: packing,
+          discount,
+          total,
+          address_line: orderType === "delivery" ? addr : null,
+          notes: notes || null,
+          items: items.map((i) => ({
+            menu_item_id: i.id.split("::")[0],
+            name: i.name,
+            price: i.price,
+            quantity: i.qty,
+            notes: i.notes ?? null,
+          })),
+          customer_name: (user.user_metadata?.["full_name"] as string) ?? user.email ?? null,
+          customer_phone: (user.user_metadata?.["phone"] as string) ?? user.phone ?? null,
+          origin: window.location.origin,
+        },
+      });
 
-  const cancelUpiPayment = () => {
-    setPayRef(null);
-    setUtr("");
-    toast.error("Transaction failed — order cancelled", {
-      description: "Nothing was ordered. Your cart is still saved, you can try again.",
-    });
+      const { load } = await import("@cashfreepayments/cashfree-js");
+      const cashfree = await load({ mode: "production" });
+      await cashfree.checkout({
+        paymentSessionId: session.paymentSessionId,
+        redirectTarget: "_self",
+      });
+    } catch (e) {
+      setPlacing(false);
+      toast.error("Could not open the payment page", {
+        description: e instanceof Error ? e.message : "Please try again in a moment.",
+      });
+    }
   };
-
 
   return (
     <MobileShell showTopBar={false} showBottomNav={false}>
@@ -238,7 +225,6 @@ function CheckoutPage() {
         </button>
         <h1 className="text-base font-semibold">Checkout</h1>
       </div>
-
 
       <Section title="How would you like it?">
         <div className="grid grid-cols-3 gap-2">
@@ -269,53 +255,28 @@ function CheckoutPage() {
         </Section>
       )}
 
-
       <Section title="Payment">
         <div className="grid grid-cols-2 gap-2">
-          <PayCard active={pay === "upi"} onClick={() => setPay("upi")} icon={<Smartphone className="h-4 w-4" />} label="UPI" />
+          <PayCard active={pay === "online"} onClick={() => setPay("online")} icon={<ShieldCheck className="h-4 w-4" />} label="Pay now" />
           <PayCard active={pay === "cash"} onClick={() => setPay("cash")} icon={<Banknote className="h-4 w-4" />} label="Cash on delivery" />
-          <PayCard active={pay === "card"} onClick={() => setPay("card")} icon={<CreditCard className="h-4 w-4" />} label="Card" />
-          <PayCard active={pay === "wallet"} onClick={() => setPay("wallet")} icon={<Wallet className="h-4 w-4" />} label="Wallet" />
         </div>
 
-        {pay === "upi" && (
+        {pay === "online" && (
           <div className="mt-3 rounded-2xl border border-border/60 bg-card p-3">
-            {upiSettings.vpa && isValidVpa(upiSettings.vpa) ? (
-              <>
-                <div className="text-[11px] text-muted-foreground">
-                  Pay <span className="font-semibold text-foreground">{inr(total)}</span> to{" "}
-                  <span className="font-semibold text-foreground">{upiSettings.vpa}</span> — pick your UPI app below.
-                  The amount will be pre-filled.
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  {UPI_APPS.map((app) => (
-                    <button
-                      key={app.id}
-                      disabled={placing}
-                      onClick={() => startUpiPayment(app.scheme)}
-                      className="press flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-left text-sm font-medium shadow-soft disabled:opacity-60"
-                    >
-                      <span
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold text-white"
-                        style={{ backgroundColor: app.color }}
-                      >
-                        {app.name.slice(0, 1)}
-                      </span>
-                      <span className="flex-1 truncate">{app.name}</span>
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-2 text-[10px] text-muted-foreground">
-                  Your order is placed only after the payment goes through. If the payment fails or you cancel it,
-                  nothing is ordered.
-                </p>
+            <div className="text-[11px] text-muted-foreground">
+              Pay <span className="font-semibold text-foreground">{inr(total)}</span> on a secure payment page — any UPI
+              app, card, net banking or wallet.
+            </div>
+            <p className="mt-2 text-[10px] text-muted-foreground">
+              Your order is placed only after the payment is confirmed by the bank. If the payment fails or you cancel
+              it, nothing is ordered and your cart stays saved.
+            </p>
+          </div>
+        )}
 
-              </>
-            ) : (
-              <div className="text-[11px] text-muted-foreground">
-                UPI isn't set up yet by the restaurant. Please choose another payment method.
-              </div>
-            )}
+        {pay === "cash" && (
+          <div className="mt-3 rounded-2xl border border-border/60 bg-card p-3 text-[11px] text-muted-foreground">
+            Pay <span className="font-semibold text-foreground">{inr(total)}</span> in cash when your order arrives.
           </div>
         )}
       </Section>
@@ -330,63 +291,27 @@ function CheckoutPage() {
         />
       </Section>
 
-      {pay !== "upi" && (
-        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[440px] border-t border-border/60 bg-background/95 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] backdrop-blur">
-          <button
-            onClick={() => place()}
-            disabled={placing}
-            className="press flex w-full items-center justify-between rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-lift disabled:opacity-70"
-          >
-            <span>{inr(total)}</span>
-            <span>{placing ? "Placing…" : "Place order"}</span>
-          </button>
-        </div>
-      )}
+      <div className="h-24" />
 
-      {payRef && (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/50 px-4 pb-4">
-          <div className="mx-auto w-full max-w-[440px] rounded-3xl border border-border/60 bg-card p-5 shadow-lift">
-            <h3 className="text-base font-semibold">Did your payment go through?</h3>
-            <p className="mt-1 text-[12px] text-muted-foreground">
-              You were asked to pay <span className="font-semibold text-foreground">{inr(total)}</span> to{" "}
-              <span className="font-semibold text-foreground">{upiSettings.vpa}</span>. Your order is placed only once
-              the payment is confirmed.
-            </p>
-
-            <label className="mt-4 block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              UPI transaction / UTR number
-            </label>
-            <input
-              value={utr}
-              onChange={(e) => setUtr(e.target.value)}
-              inputMode="numeric"
-              maxLength={16}
-              placeholder="12-digit number from your UPI app"
-              className="mt-1 w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
-            <p className="mt-1 text-[10px] text-muted-foreground">
-              Find it in your payment app under the transaction details (UTR / Transaction ID).
-            </p>
-
-            <button
-              onClick={confirmUpiPaid}
-              disabled={placing}
-              className="press mt-4 w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lift disabled:opacity-70"
-            >
-              {placing ? "Confirming…" : "I've paid — place my order"}
-            </button>
-            <button
-              onClick={cancelUpiPayment}
-              disabled={placing}
-              className="press mt-2 w-full rounded-full border border-destructive/40 px-5 py-3 text-sm font-semibold text-destructive disabled:opacity-70"
-            >
-              Payment failed / cancelled
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[440px] border-t border-border/60 bg-background/95 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] backdrop-blur">
+        <button
+          onClick={() => (pay === "online" ? payOnline() : placeCashOrder())}
+          disabled={placing}
+          className="press flex w-full items-center justify-between rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-lift disabled:opacity-70"
+        >
+          <span>{inr(total)}</span>
+          <span>
+            {placing
+              ? pay === "online"
+                ? "Opening payment…"
+                : "Placing…"
+              : pay === "online"
+                ? "Pay securely"
+                : "Place order"}
+          </span>
+        </button>
+      </div>
     </MobileShell>
-
   );
 }
 
