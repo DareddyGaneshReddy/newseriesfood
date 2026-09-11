@@ -39,19 +39,8 @@ export async function completeAuthFromUrl(): Promise<Result> {
   const accessToken = params.get("access_token");
   const refreshToken = params.get("refresh_token");
   const code = params.get("code");
-  const state = params.get("state");
 
-  // Wrapper (Median) round trips carry the state we generated in this webview.
-  // Verify it before trusting anything the URL delivered.
-  if (state) {
-    const expected = takeExpectedState();
-    if (expected && expected !== state) {
-      cleanUrl();
-      return { signedIn: false, error: "Sign-in could not be verified. Please try again." };
-    }
-  }
-
-  if (errorDescription === "cancelled") {
+  if (errorDescription === "cancelled" || params.get("error") === "access_denied") {
     cleanUrl();
     return { signedIn: false, error: "Google sign-in was cancelled." };
   }
