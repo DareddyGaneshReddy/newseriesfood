@@ -1,3 +1,3 @@
 # Roadmap
 
-- [ ] Inspect uploaded APK deep-link registration and fix Google sign-in return.
+- [x] Inspect uploaded APK deep-link registration and identify the required Median rebuild setting.
