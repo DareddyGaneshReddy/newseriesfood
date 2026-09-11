@@ -129,51 +129,15 @@ function AuthPage() {
     setBusy(true);
     try {
       rememberAuthDestination(destination);
-
-      if (canUseMedianGoogleSignIn()) {
-        const idToken = await signInWithMedianGoogle();
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: "google",
-          token: idToken,
-        });
-        if (error) throw error;
-        if (!data.user) throw new Error("Google sign-in did not create a session");
-        toast.success("Welcome!");
-        goNext();
-        return;
+      // Supabase Auth owns the whole Google flow: it redirects to Google and
+      // back to /auth/callback, where the session is established.
+      const { error } = await signInWithGoogle();
+      if (error) {
+        toast.error(error);
+        setBusy(false);
       }
-
-      // App-wrapper builds (Median APK): launch the managed Google sign-in
-      // itself into the app browser so the whole round trip stays in one
-      // browser context, and let /auth/bridge hand the result back into the app.
-      if (isEmbeddedAppWebView()) {
-        const { error } = startWrapperGoogleOAuth();
-        if (error) toast.error(error);
-        return;
-      }
-
-
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-        extraParams: { prompt: "select_account" },
-      });
-      if (result.error) {
-        const raw = result.error.message || "";
-        const stateIssue = /state/i.test(raw);
-        toast.error(
-          stateIssue
-            ? "Sign-in session expired. Tap Continue with Google again without switching apps."
-            : raw || "Google sign-in failed",
-        );
-        return;
-      }
-      if (result.redirected) return;
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) throw new Error("Google sign-in did not create a session");
-      goNext();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
-    } finally {
       setBusy(false);
     }
   };
