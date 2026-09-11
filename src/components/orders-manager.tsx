@@ -236,12 +236,15 @@ Total: ${inr(Number(o.total))}${o.notes ? `\nOrder note: ${o.notes}` : ""}`;
                       "flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold",
                       paid
                         ? "bg-[color-mix(in_oklab,var(--olive)_20%,transparent)] text-[oklch(0.4_0.07_118)]"
-                        : "bg-destructive/10 text-destructive",
+                        : awaiting
+                          ? "bg-[color-mix(in_oklab,var(--mustard)_28%,transparent)] text-[oklch(0.45_0.09_80)]"
+                          : "bg-destructive/10 text-destructive",
                     )}
                   >
                     {paid ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                    {paid ? "Paid" : "Unpaid"} · {o.payment_method}
+                    {paid ? "Paid" : awaiting ? "Verify payment" : failed ? "Payment failed" : "Unpaid"} · {o.payment_method}
                   </span>
+
                   <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
                 </div>
               </div>
