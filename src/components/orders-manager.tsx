@@ -26,6 +26,7 @@ type AdminOrder = {
   payment_method: string;
   payment_status: string;
   paid_at: string | null;
+  upi_ref: string | null;
   subtotal: number;
   tax: number;
   delivery_fee: number;
@@ -125,6 +126,17 @@ export function OrdersManager() {
     if (error) return toast.error(error.message);
     toast.success(paid ? "Marked as paid" : "Marked as unpaid");
     qc.invalidateQueries({ queryKey: ["admin-orders-full"] });
+  };
+
+  const rejectPayment = async (id: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ payment_status: "failed", status: "cancelled", paid_at: null })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Payment rejected — order cancelled");
+    qc.invalidateQueries({ queryKey: ["admin-orders-full"] });
+    qc.invalidateQueries({ queryKey: ["admin-orders"] });
   };
 
   const printTicket = (o: AdminOrder, customer?: { full_name: string | null; phone: string | null }) => {
