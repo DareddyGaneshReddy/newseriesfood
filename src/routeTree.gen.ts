@@ -22,7 +22,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ItemIdRouteImport } from './routes/item.$id'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
-import { Route as AuthBridgeRouteImport } from './routes/auth.bridge'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -89,11 +88,6 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/callback',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthBridgeRoute = AuthBridgeRouteImport.update({
-  id: '/bridge',
-  path: '/bridge',
-  getParentRoute: () => AuthRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -106,7 +100,6 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/auth/bridge': typeof AuthBridgeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/item/$id': typeof ItemIdRoute
   '/order/$id': typeof OrderIdRoute
@@ -122,7 +115,6 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/auth/bridge': typeof AuthBridgeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/item/$id': typeof ItemIdRoute
   '/order/$id': typeof OrderIdRoute
@@ -139,7 +131,6 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/auth/bridge': typeof AuthBridgeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/item/$id': typeof ItemIdRoute
   '/order/$id': typeof OrderIdRoute
@@ -157,7 +148,6 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/sitemap.xml'
-    | '/auth/bridge'
     | '/auth/callback'
     | '/item/$id'
     | '/order/$id'
@@ -173,7 +163,6 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/sitemap.xml'
-    | '/auth/bridge'
     | '/auth/callback'
     | '/item/$id'
     | '/order/$id'
@@ -189,7 +178,6 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/sitemap.xml'
-    | '/auth/bridge'
     | '/auth/callback'
     | '/item/$id'
     | '/order/$id'
@@ -303,23 +291,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/auth/bridge': {
-      id: '/auth/bridge'
-      path: '/bridge'
-      fullPath: '/auth/bridge'
-      preLoaderRoute: typeof AuthBridgeRouteImport
-      parentRoute: typeof AuthRoute
-    }
   }
 }
 
 interface AuthRouteChildren {
-  AuthBridgeRoute: typeof AuthBridgeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
-  AuthBridgeRoute: AuthBridgeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
 }
 
