@@ -40,6 +40,8 @@ function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [locating, setLocating] = useState(false);
   const [upiSettings, setUpiSettings] = useState<{ vpa: string | null; payeeName: string | null }>({ vpa: null, payeeName: null });
+  const [payRef, setPayRef] = useState<string | null>(null);
+  const [utr, setUtr] = useState("");
 
   useEffect(() => {
     supabase
