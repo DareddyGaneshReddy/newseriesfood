@@ -122,17 +122,8 @@ function CheckoutPage() {
     );
   }
 
-  const place = async (upiAppScheme?: (params: string) => string) => {
-    if (!user) return;
-    if (orderType === "delivery" && !addr.trim()) {
-      toast.error("Please enter a delivery address");
-      return;
-    }
-    if (pay === "upi" && (!upiSettings.vpa || !isValidVpa(upiSettings.vpa))) {
-      toast.error("UPI is not configured yet. Please choose another method or contact the restaurant.");
-      return;
-    }
-    setPlacing(true);
+  const createOrder = async (payment: { status: string; upiRef?: string | null }) => {
+    if (!user) return null;
     const { data: order, error } = await supabase.from("orders").insert({
       user_id: user.id,
       status: "placed",
@@ -145,12 +136,13 @@ function CheckoutPage() {
       total,
       address_line: orderType === "delivery" ? addr : null,
       notes: notes || null,
+      payment_status: payment.status,
+      upi_ref: payment.upiRef ?? null,
     }).select("id, code").single();
 
     if (error || !order) {
-      setPlacing(false);
       toast.error("Could not place order. Please try again.");
-      return;
+      return null;
     }
 
     const rows = items.map((i) => ({
@@ -163,29 +155,78 @@ function CheckoutPage() {
     }));
     const { error: itemsErr } = await supabase.from("order_items").insert(rows);
     if (itemsErr) {
-      setPlacing(false);
       toast.error("Order could not be finalized.");
+      return null;
+    }
+    return order;
+  };
+
+  // Non-UPI methods place the order immediately.
+  const place = async () => {
+    if (!user) return;
+    if (orderType === "delivery" && !addr.trim()) {
+      toast.error("Please enter a delivery address");
       return;
     }
+    setPlacing(true);
+    const order = await createOrder({ status: "pending" });
+    setPlacing(false);
+    if (!order) return;
     clear();
     toast.success(`Order ${order.code} placed`);
-
-    if (pay === "upi" && upiAppScheme && upiSettings.vpa) {
-      const params = buildUpiParams({
-        vpa: upiSettings.vpa,
-        payeeName: upiSettings.payeeName || "New Series Food Corner",
-        amount: total,
-        note: `Order ${order.code}`,
-        txnRef: order.code,
-      });
-      // Launch UPI intent — Android/iOS will open the target app.
-      window.location.href = upiAppScheme(params);
-      setTimeout(() => nav({ to: "/order/$id", params: { id: order.id } }), 800);
-      return;
-    }
-
     nav({ to: "/order/$id", params: { id: order.id } });
   };
+
+  // UPI: open the payment app FIRST. No order exists until payment is confirmed.
+  const startUpiPayment = (appScheme: (params: string) => string) => {
+    if (!user) return;
+    if (orderType === "delivery" && !addr.trim()) {
+      toast.error("Please enter a delivery address");
+      return;
+    }
+    if (!upiSettings.vpa || !isValidVpa(upiSettings.vpa)) {
+      toast.error("UPI is not configured yet. Please choose another method or contact the restaurant.");
+      return;
+    }
+    const ref = `NSF${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 90 + 10)}`;
+    setPayRef(ref);
+    setUtr("");
+    const params = buildUpiParams({
+      vpa: upiSettings.vpa,
+      payeeName: upiSettings.payeeName || "New Series Food Corner",
+      amount: total,
+      note: `Order ${ref}`,
+      txnRef: ref,
+    });
+    window.location.href = appScheme(params);
+  };
+
+  const confirmUpiPaid = async () => {
+    const cleanUtr = utr.replace(/\s+/g, "");
+    if (!/^[0-9]{12}$/.test(cleanUtr)) {
+      toast.error("Enter the 12-digit UPI transaction / UTR number from your payment app.");
+      return;
+    }
+    setPlacing(true);
+    const order = await createOrder({ status: "awaiting_verification", upiRef: `${cleanUtr} (ref ${payRef})` });
+    setPlacing(false);
+    if (!order) return;
+    setPayRef(null);
+    clear();
+    toast.success(`Payment submitted — order ${order.code} placed`, {
+      description: "The restaurant is verifying your payment now.",
+    });
+    nav({ to: "/order/$id", params: { id: order.id } });
+  };
+
+  const cancelUpiPayment = () => {
+    setPayRef(null);
+    setUtr("");
+    toast.error("Transaction failed — order cancelled", {
+      description: "Nothing was ordered. Your cart is still saved, you can try again.",
+    });
+  };
+
 
   return (
     <MobileShell showTopBar={false} showBottomNav={false}>
