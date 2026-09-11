@@ -321,6 +321,50 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_intents: {
+        Row: {
+          amount: number
+          cf_order_id: string
+          created_at: string
+          id: string
+          order_id: string | null
+          payload: Json
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          cf_order_id: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          payload: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          cf_order_id?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          payload?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_intents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_settings: {
         Row: {
           created_at: string

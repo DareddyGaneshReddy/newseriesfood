@@ -15,6 +15,13 @@
       "when": 1789154707381,
       "tag": "0001_add_upi_ref_to_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789155389569,
+      "tag": "0002_create_payment_intents",
+      "breakpoints": true
     }
   ]
 }
