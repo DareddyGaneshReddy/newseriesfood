@@ -58,7 +58,7 @@ export const createCashfreePayment = createServerFn({ method: "POST" })
       cf_order_id: cfOrderId,
       amount: data.total,
       status: "created",
-      payload: data as unknown as Record<string, unknown>,
+      payload: JSON.parse(JSON.stringify(data)),
     });
     if (insErr) throw new Error("Could not start the payment. Please try again.");
 
