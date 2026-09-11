@@ -292,7 +292,7 @@ function CheckoutPage() {
                     <button
                       key={app.id}
                       disabled={placing}
-                      onClick={() => place(app.scheme)}
+                      onClick={() => startUpiPayment(app.scheme)}
                       className="press flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-left text-sm font-medium shadow-soft disabled:opacity-60"
                     >
                       <span
@@ -306,8 +306,10 @@ function CheckoutPage() {
                   ))}
                 </div>
                 <p className="mt-2 text-[10px] text-muted-foreground">
-                  Tapping an app places your order and opens it with the amount ready to pay.
+                  Your order is placed only after the payment goes through. If the payment fails or you cancel it,
+                  nothing is ordered.
                 </p>
+
               </>
             ) : (
               <div className="text-[11px] text-muted-foreground">
