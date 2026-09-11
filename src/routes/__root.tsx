@@ -106,6 +106,10 @@ function AuthReturnHandler() {
   useEffect(() => {
     const raw = window.location.hash.replace(/^#/, "") + "&" + window.location.search.replace(/^\?/, "");
     if (!/(?:^|[&?])(access_token|code|error|error_description)=/.test(raw)) return;
+    // The external-browser bridge must forward the untouched OAuth payload to
+    // the Median WebView. Consuming it here would store the session in the
+    // external browser and strip the tokens before the bridge can deep-link.
+    if (window.location.pathname.startsWith("/auth/bridge")) return;
     if (window.location.pathname.startsWith("/auth/callback")) return;
     if (window.location.pathname.startsWith("/reset-password")) return;
 
